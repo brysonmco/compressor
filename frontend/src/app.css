@@ -1,3 +1,24 @@
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,100..1000;1,9..40,100..1000&display=swap');
 @import 'tailwindcss';
+
 @plugin '@tailwindcss/forms';
 @plugin '@tailwindcss/typography';
+
+@theme {
+    --font-sans: 'DM Sans', sans-serif;
+
+    --color-brand: #0077cc;
+    --color-brand-dark: #005fa3;
+    --color-bg: #f1f3f4;
+}
+
+* {
+    box-sizing: border-box;
+    overflow: hidden;
+}
+
+body {
+    background-color: var(--color-bg);
+    height: 100vh;
+    color: #293141;
+}
