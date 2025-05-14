@@ -9,7 +9,7 @@ CREATE TABLE users
 
 CREATE TABLE refresh_tokens
 (
-    id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+    id serial PRIMARY KEY,
     token text UNIQUE NOT NULL,
     user_id serial NOT NULL REFERENCES users(id),
     expires_at timestamp NOT NULL,
