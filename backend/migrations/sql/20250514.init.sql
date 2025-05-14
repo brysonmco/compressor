@@ -4,13 +4,13 @@ CREATE TABLE users
     email         text UNIQUE NOT NULL,
     first_name    text,
     last_name     text,
-    password_hash text
+    password_hash text NOT NULL
 );
 
-CREATE TABLE refresh_tokens
+CREATE TABLE sessions
 (
     id serial PRIMARY KEY,
-    token text UNIQUE NOT NULL,
+    token_hash text UNIQUE NOT NULL,
     user_id serial NOT NULL REFERENCES users(id),
     expires_at timestamp NOT NULL,
     revoked bool DEFAULT FALSE,
