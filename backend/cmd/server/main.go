@@ -1,6 +1,7 @@
 package main
 
 import (
+	"github.com/awesomebfm/compressor/internal/auth"
 	"github.com/awesomebfm/compressor/internal/db"
 	"github.com/awesomebfm/compressor/internal/handlers"
 	"github.com/go-chi/chi/v5"
@@ -18,6 +19,9 @@ func main() {
 		log.Fatalf("failed to connect to database: %v", err)
 	}
 
+	// Auth
+	ath := auth.NewAuth()
+
 	// Router
 	r := chi.NewRouter()
 
@@ -28,7 +32,7 @@ func main() {
 	r.Use(middleware.Timeout(60 * time.Second))
 
 	// Handlers
-	r.Mount("/v1", handlers.NewAuthHandler(database))
+	r.Mount("/v1", handlers.NewAuthHandler(database, ath))
 
 	log.Fatal(http.ListenAndServe(os.Getenv("LISTEN_ADDR"), r))
 }

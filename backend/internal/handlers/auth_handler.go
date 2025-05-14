@@ -2,26 +2,37 @@ package handlers
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
+	"github.com/awesomebfm/compressor/internal/auth"
 	"github.com/awesomebfm/compressor/internal/db"
 	"github.com/go-chi/chi/v5"
+	"github.com/jackc/pgx/v5"
 	"io"
 	"log"
 	"net/http"
+	"os"
 )
 
 type AuthHandler struct {
 	Database *db.Database
+	Auth     *auth.Auth
 }
 
-func NewAuthHandler(database *db.Database) http.Handler {
+func NewAuthHandler(
+	database *db.Database,
+	ath *auth.Auth,
+) http.Handler {
 	h := &AuthHandler{
 		Database: database,
+		Auth:     ath,
 	}
 
 	r := chi.NewRouter()
-	r.Post("/login", h.login)
-	r.Post("/signup", h.signUp)
+	r.Post("/auth/login", h.login)
+	r.Post("/auth/signup", h.signUp)
+	r.Post("/auth/refresh", h.refresh)
+	r.Post("/auth/logout", h.logout)
 
 	return r
 }
@@ -48,7 +59,54 @@ func (h *AuthHandler) login(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	fmt.Println(data)
+	// Fetch user's account from the database
+	user, err := h.Database.FindUserByEmail(r.Context(), data.Email)
+	if err != nil && errors.Is(err, pgx.ErrNoRows) {
+		http.Error(w, "invalid credentials", http.StatusUnauthorized)
+		return
+	} else if err != nil {
+		log.Printf("error finding user by email: %v", err)
+		http.Error(w, "error communicating with database", http.StatusInternalServerError)
+		return
+	}
+
+	// Check password
+	if !h.Auth.CheckPasswordHash(data.Password, user.PasswordHash) {
+		http.Error(w, "invalid credentials", http.StatusUnauthorized)
+		return
+	}
+
+	// Generate refresh token
+	refreshToken, err := h.Auth.GenerateRefreshToken(user.Id)
+	if err != nil {
+		log.Printf("error generating refresh token: %v", err)
+		http.Error(w, "error generating token", http.StatusInternalServerError)
+		return
+	}
+
+	switch os.Getenv("DEPLOYMENT_TARGET") {
+	case "development":
+		http.SetCookie(w, &http.Cookie{
+			Name:     "refreshToken",
+			Value:    refreshToken,
+			HttpOnly: true,
+			Secure:   false,
+			Path:     "/auth/refresh",
+			SameSite: http.SameSiteNoneMode,
+			Domain:   "localhost:8080",
+		})
+	default:
+		http.SetCookie(w, &http.Cookie{
+			Name:     "refreshToken",
+			Value:    refreshToken,
+			HttpOnly: true,
+			Secure:   true,
+			Path:     "/auth/refresh",
+			SameSite: http.SameSiteNoneMode,
+			Domain:   "api-compressor.brysonmcbreen.dev",
+		})
+	}
+
 }
 
 type signUpRequest struct {
@@ -84,5 +142,33 @@ func (h *AuthHandler) signUp(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Ensure account does not already exist
+	_, err = h.Database.FindUserByEmail(r.Context(), data.Email)
+	if err == nil {
+		http.Error(w, "account already exists", http.StatusBadRequest)
+		return
+	} else if !errors.Is(err, pgx.ErrNoRows) {
+		log.Printf("error finding user by email: %v", err)
+		http.Error(w, "error communicating with database", http.StatusInternalServerError)
+		return
+	}
+
+	// Hash password
+	hashedPassword, err := h.Auth.HashPassword(data.Password)
+	if err != nil {
+		log.Printf("error hashing password: %v", err)
+		http.Error(w, "error creating account", http.StatusInternalServerError)
+		return
+	}
+
 	fmt.Println(data)
+	fmt.Println(hashedPassword)
+}
+
+func (h *AuthHandler) refresh(w http.ResponseWriter, r *http.Request) {
+
+}
+
+func (h *AuthHandler) logout(w http.ResponseWriter, r *http.Request) {
+
 }

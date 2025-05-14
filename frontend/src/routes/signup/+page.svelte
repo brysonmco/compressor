@@ -14,7 +14,6 @@
         password: '',
         confirmPassword: ''
     };
-    let allowSubmit = true;
 
     function validateField(field: string) {
         switch (field) {
@@ -70,7 +69,7 @@
         <span class="text-4xl font-semibold">Sign Up</span>
 
         <label class="flex flex-col gap-1.5 w-full">
-            <span>Email</span>
+            <span class="text-lg font-medium">Email</span>
             <input
                     type="email"
                     name="email"
@@ -78,7 +77,7 @@
                     required
                     bind:value={formData.email}
                     on:blur={() => validateField('email')}
-                    class="rounded-lg bg-bg border-2 text-lg font-medium {formErrors.email ? 'border-red-500' : 'border-slate-200' }  focus:border-brand focus:outline-none">
+                    class="rounded-lg bg-bg border-2 text-lg font-medium {formErrors.email ? 'border-red-500' : 'border-slate-200' } focus:border-brand focus:outline-none">
             {#if formErrors.email}
                 <span class="text-red-500 text-md font-medium">{formErrors.email}</span>
             {/if}
@@ -86,7 +85,7 @@
 
         <div class="flex flex-row w-full gap-4">
             <label class="flex flex-col gap-1.5 flex-grow">
-                <span>First Name</span>
+                <span class="text-lg font-medium">First Name</span>
                 <input
                         type="text"
                         name="firstName"
@@ -101,7 +100,7 @@
             </label>
 
             <label class="flex flex-col gap-1.5 flex-grow">
-                <span>Last Name</span>
+                <span class="text-lg font-medium">Last Name</span>
                 <input
                         type="text"
                         name="lastName"
@@ -133,7 +132,7 @@
         </label>
 
         <label class="flex flex-col gap-1.5 w-full">
-            <span>Confirm Password</span>
+            <span class="text-lg font-medium">Confirm Password</span>
             <input
                     type="password"
                     name="confirmPassword"
