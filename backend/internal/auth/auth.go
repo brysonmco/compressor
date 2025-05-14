@@ -2,6 +2,10 @@ package auth
 
 import (
 	"aidanwoods.dev/go-paseto"
+	"crypto/rand"
+	"crypto/sha256"
+	"encoding/base64"
+	"encoding/hex"
 	"golang.org/x/crypto/bcrypt"
 	"strconv"
 	"time"
@@ -73,10 +77,15 @@ func (a *Auth) ValidateAccessToken(token string) (int64, error) {
 	return id, nil
 }
 
-func (a *Auth) GenerateRefreshToken(id int64) (string, error) {
-	return "", nil
+func (a *Auth) GenerateRefreshToken() (string, error) {
+	b := make([]byte, 32)
+	if _, err := rand.Read(b); err != nil {
+		return "", err
+	}
+	return base64.URLEncoding.EncodeToString(b), nil
 }
 
-func (a *Auth) ValidateRefreshToken() (string, error) {
-	return "", nil
+func (a *Auth) HashRefreshToken(token string) string {
+	sum := sha256.Sum256([]byte(token))
+	return hex.EncodeToString(sum[:])
 }

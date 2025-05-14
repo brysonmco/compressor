@@ -3,15 +3,16 @@ package handlers
 import (
 	"encoding/json"
 	"errors"
-	"fmt"
 	"github.com/awesomebfm/compressor/internal/auth"
 	"github.com/awesomebfm/compressor/internal/db"
+	"github.com/awesomebfm/compressor/internal/models"
 	"github.com/go-chi/chi/v5"
 	"github.com/jackc/pgx/v5"
 	"io"
 	"log"
 	"net/http"
 	"os"
+	"time"
 )
 
 type AuthHandler struct {
@@ -77,7 +78,7 @@ func (h *AuthHandler) login(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Generate refresh token
-	refreshToken, err := h.Auth.GenerateRefreshToken(user.Id)
+	refreshToken, err := h.Auth.GenerateRefreshToken()
 	if err != nil {
 		log.Printf("error generating refresh token: %v", err)
 		http.Error(w, "error generating token", http.StatusInternalServerError)
@@ -161,8 +162,86 @@ func (h *AuthHandler) signUp(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	fmt.Println(data)
-	fmt.Println(hashedPassword)
+	// Persist account
+	user, err := h.Database.CreateUser(r.Context(), &models.CreateUser{
+		Email:        data.Email,
+		FirstName:    data.FirstName,
+		LastName:     data.LastName,
+		PasswordHash: hashedPassword,
+	})
+	if err != nil {
+		log.Printf("error creating user: %v", err)
+		http.Error(w, "error creating account", http.StatusInternalServerError)
+		return
+	}
+
+	// Generate access token
+	accessToken, err := h.Auth.GenerateAccessToken(user.Id)
+	if err != nil {
+		log.Printf("error generating access token: %v", err)
+		http.Error(w, "error creating account", http.StatusInternalServerError)
+		return
+	}
+
+	// Generate refresh token
+	refreshToken, err := h.Auth.GenerateRefreshToken()
+	if err != nil {
+		log.Printf("error generating refresh token: %v", err)
+		http.Error(w, "error creating account", http.StatusInternalServerError)
+		return
+	}
+
+	// Set refresh token cookie
+	switch os.Getenv("DEPLOYMENT_TARGET") {
+	case "development":
+		http.SetCookie(w, &http.Cookie{
+			Name:     "refreshToken",
+			Value:    refreshToken,
+			HttpOnly: true,
+			Secure:   false,
+			Path:     "/auth/refresh",
+			SameSite: http.SameSiteNoneMode,
+			Domain:   "localhost:8080",
+		})
+	default:
+		http.SetCookie(w, &http.Cookie{
+			Name:     "refreshToken",
+			Value:    refreshToken,
+			HttpOnly: true,
+			Secure:   true,
+			Path:     "/auth/refresh",
+			SameSite: http.SameSiteNoneMode,
+			Domain:   "api-compressor.brysonmcbreen.dev",
+		})
+	}
+
+	// Hash refresh token
+	hashedRefreshToken := h.Auth.HashRefreshToken(refreshToken)
+
+	// Persist session
+	now := time.Now()
+	_, err = h.Database.CreateSession(r.Context(), &models.CreateSession{
+		TokenHash: hashedRefreshToken,
+		UserId:    user.Id,
+		ExpiresAt: now.Add(time.Hour * 24 * 30),
+		CreatedAt: now,
+	})
+	if err != nil {
+		log.Printf("error creating session: %v", err)
+		http.Error(w, "error creating account", http.StatusInternalServerError)
+		return
+	}
+
+	// Return access token
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	err = json.NewEncoder(w).Encode(map[string]string{
+		"accessToken": accessToken,
+	})
+	if err != nil {
+		log.Printf("error encoding JSON response: %v", err)
+		http.Error(w, "error creating account", http.StatusInternalServerError)
+	}
 }
 
 func (h *AuthHandler) refresh(w http.ResponseWriter, r *http.Request) {

@@ -9,7 +9,7 @@ func (d *Database) FindUserByEmail(
 	ctx context.Context,
 	email string,
 ) (*models.User, error) {
-	query := `SELECT id, email, first_name, last_name, password_hash
+	query := `SELECT (id, email, first_name, last_name, password_hash)
 		FROM users
 		WHERE email = $1`
 
@@ -33,7 +33,7 @@ func (d *Database) FindUserByID(
 	ctx context.Context,
 	id int64,
 ) (*models.User, error) {
-	query := `SELECT id, email, first_name, last_name, password_hash
+	query := `SELECT (id, email, first_name, last_name, password_hash)
 		FROM users
 		WHERE id = $1`
 
@@ -58,8 +58,8 @@ func (d *Database) CreateUser(
 	userReq *models.CreateUser,
 ) (*models.User, error) {
 	query := `INSERT INTO users (email, first_name, last_name, password_hash)
-		VALUES ($1, $2, $3, $4) 
-		RETURNING (id, email, first_name, last_name, password_hash)`
+		VALUES ($1, $2, $3, $4)
+		RETURNING id, email, first_name, last_name, password_hash`
 
 	var user models.User
 	err := d.Pool.QueryRow(ctx, query,
