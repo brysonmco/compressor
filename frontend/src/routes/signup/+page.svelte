@@ -160,7 +160,7 @@
     </form>
 </div>
 
-<div class="fixed inset-0 z-50 flex items-center justify-center bg-gray-900/30">
+<!--<div class="fixed inset-0 z-50 flex items-center justify-center bg-gray-900/30">
     <div class="bg-white rounded-2xl shadow-lg max-w-md p-6 text-center">
         <h2 class="text-xl font-semibold mb-4">Error</h2>
         <p class="mb-4 text-red-600">hello</p>
@@ -170,4 +170,4 @@
             Close
         </button>
     </div>
-</div>
+</div>-->

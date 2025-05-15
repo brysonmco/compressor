@@ -1,5 +1,7 @@
 <script>
     import Header from "$lib/components/Header.svelte";
+    let authenticated = false;
+    let avatarUrl = "";
 </script>
 
-<Header></Header>
+<Header authenticated={authenticated} avatarUrl={avatarUrl}></Header>

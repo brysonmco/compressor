@@ -1,6 +1,7 @@
 import type {Actions} from "./$types";
 import {apiBaseUrl} from "$lib/config";
 import {fail, redirect} from "@sveltejs/kit";
+import {accessToken} from "$lib/stores/auth";
 
 export const actions = {
     default: async ({cookies, request}) => {
@@ -30,14 +31,19 @@ export const actions = {
 
         if (!response.ok) {
             switch (result.error) {
-                case "bad_json":
-                    return fail(400, result.message);
                 case "missing_fields":
-                    // TODO: implement this later, it seems like a headache
-                case "email_already_exists":
-                    throw redirect(303, '/login?email=' + email);
-
+                    // TODO: implement this later
+                case "passwords_mismatch":
+                // TODO: implement this later
+                case "account_exists":
+                    redirect(303, '/login?email=' + email);
+                    break;
+                default:
+                    // TODO: implement this later
             }
         }
+
+        accessToken.set(result.accessToken);
+        return redirect(303, '/');
     }
 } satisfies Actions;

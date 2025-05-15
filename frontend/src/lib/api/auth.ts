@@ -1,6 +1,6 @@
-import { apiBaseUrl } from "$lib/config";
-import { accessToken } from "$lib/stores/auth";
-import { get } from "svelte/store";
+import {apiBaseUrl} from "$lib/config";
+import {accessToken} from "$lib/stores/auth";
+import {get} from "svelte/store";
 
 export async function refreshAccessToken(): Promise<boolean> {
     try {
