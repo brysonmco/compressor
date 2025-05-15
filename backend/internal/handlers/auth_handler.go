@@ -96,9 +96,8 @@ func (h *AuthHandler) login(w http.ResponseWriter, r *http.Request) {
 			Value:    refreshToken,
 			HttpOnly: true,
 			Secure:   false,
-			Path:     "/auth/refresh",
-			SameSite: http.SameSiteNoneMode,
-			Domain:   "localhost:8080",
+			Path:     "v1/auth/refresh",
+			SameSite: http.SameSiteStrictMode,
 		})
 	default:
 		http.SetCookie(w, &http.Cookie{
@@ -106,8 +105,8 @@ func (h *AuthHandler) login(w http.ResponseWriter, r *http.Request) {
 			Value:    refreshToken,
 			HttpOnly: true,
 			Secure:   true,
-			Path:     "/auth/refresh",
-			SameSite: http.SameSiteNoneMode,
+			Path:     "v1/auth/refresh",
+			SameSite: http.SameSiteStrictMode,
 			Domain:   "api-compressor.brysonmcbreen.dev",
 		})
 	}
@@ -257,9 +256,8 @@ func (h *AuthHandler) signUp(w http.ResponseWriter, r *http.Request) {
 			Value:    refreshToken,
 			HttpOnly: true,
 			Secure:   false,
-			Path:     "/auth/refresh",
-			SameSite: http.SameSiteNoneMode,
-			Domain:   "localhost:8080",
+			Path:     "v1/auth/refresh",
+			SameSite: http.SameSiteStrictMode,
 		})
 	default:
 		http.SetCookie(w, &http.Cookie{
@@ -267,8 +265,8 @@ func (h *AuthHandler) signUp(w http.ResponseWriter, r *http.Request) {
 			Value:    refreshToken,
 			HttpOnly: true,
 			Secure:   true,
-			Path:     "/auth/refresh",
-			SameSite: http.SameSiteNoneMode,
+			Path:     "v1/auth/refresh",
+			SameSite: http.SameSiteStrictMode,
 			Domain:   "api-compressor.brysonmcbreen.dev",
 		})
 	}
