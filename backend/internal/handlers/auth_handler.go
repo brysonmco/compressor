@@ -9,7 +9,6 @@ import (
 	"github.com/awesomebfm/compressor/internal/utils"
 	"github.com/go-chi/chi/v5"
 	"github.com/jackc/pgx/v5"
-	"io"
 	"log"
 	"net/http"
 	"os"
@@ -45,36 +44,29 @@ type loginRequest struct {
 }
 
 func (h *AuthHandler) login(w http.ResponseWriter, r *http.Request) {
-	body, err := io.ReadAll(r.Body)
+	var data loginRequest
+	err := json.NewDecoder(r.Body).Decode(&data)
 	if err != nil {
-		log.Printf("error reading login request body: %v", err)
-		http.Error(w, "couldn't read request body", http.StatusBadRequest)
+		log.Printf("error parsing login request JSON: %v", err)
+		utils.WriteError(w, "error parsing JSON", http.StatusBadRequest, "invalid_json", nil)
 		return
 	}
 	defer r.Body.Close()
 
-	var data loginRequest
-	err = json.Unmarshal(body, &data)
-	if err != nil {
-		log.Printf("error parsing login request JSON: %v", err)
-		http.Error(w, "error parsing JSON", http.StatusBadRequest)
-		return
-	}
-
 	// Fetch user's account from the database
 	user, err := h.Database.FindUserByEmail(r.Context(), data.Email)
 	if err != nil && errors.Is(err, pgx.ErrNoRows) {
-		http.Error(w, "invalid credentials", http.StatusUnauthorized)
+		utils.WriteError(w, "invalid credentials", http.StatusUnauthorized, "invalid_credentials", nil)
 		return
 	} else if err != nil {
 		log.Printf("error finding user by email: %v", err)
-		http.Error(w, "error communicating with database", http.StatusInternalServerError)
+		utils.WriteError(w, "error logging in", http.StatusInternalServerError, "internal_error", nil)
 		return
 	}
 
 	// Check password
 	if !h.Auth.CheckPasswordHash(data.Password, user.PasswordHash) {
-		http.Error(w, "invalid credentials", http.StatusUnauthorized)
+		utils.WriteError(w, "invalid credentials", http.StatusUnauthorized, "invalid_credentials", nil)
 		return
 	}
 
@@ -82,7 +74,7 @@ func (h *AuthHandler) login(w http.ResponseWriter, r *http.Request) {
 	accessToken, err := h.Auth.GenerateAccessToken(user.Id)
 	if err != nil {
 		log.Printf("error generating access token: %v", err)
-		http.Error(w, "error creating account", http.StatusInternalServerError)
+		utils.WriteError(w, "error logging in", http.StatusInternalServerError, "internal_error", nil)
 		return
 	}
 
@@ -90,7 +82,7 @@ func (h *AuthHandler) login(w http.ResponseWriter, r *http.Request) {
 	refreshToken, err := h.Auth.GenerateRefreshToken()
 	if err != nil {
 		log.Printf("error generating refresh token: %v", err)
-		http.Error(w, "error generating token", http.StatusInternalServerError)
+		utils.WriteError(w, "error logging in", http.StatusInternalServerError, "internal_error", nil)
 		return
 	}
 
@@ -131,7 +123,7 @@ func (h *AuthHandler) login(w http.ResponseWriter, r *http.Request) {
 	})
 	if err != nil {
 		log.Printf("error creating session: %v", err)
-		http.Error(w, "error creating account", http.StatusInternalServerError)
+		utils.WriteError(w, "error logging in", http.StatusInternalServerError, "internal_error", nil)
 		return
 	}
 
@@ -143,7 +135,7 @@ func (h *AuthHandler) login(w http.ResponseWriter, r *http.Request) {
 	})
 	if err != nil {
 		log.Printf("error encoding JSON response: %v", err)
-		http.Error(w, "error creating account", http.StatusInternalServerError)
+		utils.WriteError(w, "error logging in", http.StatusInternalServerError, "internal_error", nil)
 	}
 }
 
