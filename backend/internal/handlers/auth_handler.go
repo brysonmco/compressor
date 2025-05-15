@@ -135,7 +135,6 @@ func (h *AuthHandler) login(w http.ResponseWriter, r *http.Request) {
 	})
 	if err != nil {
 		log.Printf("error encoding JSON response: %v", err)
-		utils.WriteError(w, "error logging in", http.StatusInternalServerError, "internal_error", nil)
 	}
 }
 
