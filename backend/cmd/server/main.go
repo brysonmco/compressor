@@ -6,6 +6,7 @@ import (
 	"github.com/awesomebfm/compressor/internal/handlers"
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
+	"github.com/stripe/stripe-go/v82"
 	"log"
 	"net/http"
 	"os"
@@ -13,6 +14,9 @@ import (
 )
 
 func main() {
+	// Stripe
+	stripe.Key = os.Getenv("STRIPE_SECRET_KEY")
+
 	// Database
 	database, err := db.NewDatabase(os.Getenv("DATABASE_URL"))
 	if err != nil {
@@ -32,7 +36,8 @@ func main() {
 	r.Use(middleware.Timeout(60 * time.Second))
 
 	// Handlers
-	r.Mount("/v1", handlers.NewAuthHandler(database, ath))
+	r.Mount("/v1/auth", handlers.NewAuthHandler(database, ath))
+	r.Mount("/v1/subscriptions", handlers.NewSubscriptionHandler(database, ath))
 
 	log.Fatal(http.ListenAndServe(os.Getenv("LISTEN_ADDR"), r))
 }

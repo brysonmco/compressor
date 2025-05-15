@@ -2,6 +2,7 @@ package db
 
 import (
 	"context"
+	"fmt"
 	"github.com/awesomebfm/compressor/internal/models"
 )
 
@@ -9,7 +10,7 @@ func (d *Database) FindUserByEmail(
 	ctx context.Context,
 	email string,
 ) (*models.User, error) {
-	query := `SELECT id, email, first_name, last_name, password_hash
+	query := `SELECT id, email, first_name, last_name, password_hash, stripe_customer_id
 		FROM users
 		WHERE email = $1`
 
@@ -22,6 +23,7 @@ func (d *Database) FindUserByEmail(
 		&user.FirstName,
 		&user.LastName,
 		&user.PasswordHash,
+		&user.StripeCustomerId,
 	); err != nil {
 		return nil, err
 	}
@@ -33,7 +35,7 @@ func (d *Database) FindUserByID(
 	ctx context.Context,
 	id int64,
 ) (*models.User, error) {
-	query := `SELECT id, email, first_name, last_name, password_hash
+	query := `SELECT id, email, first_name, last_name, password_hash, stripe_customer_id
 		FROM users
 		WHERE id = $1`
 
@@ -46,6 +48,7 @@ func (d *Database) FindUserByID(
 		&user.FirstName,
 		&user.LastName,
 		&user.PasswordHash,
+		&user.StripeCustomerId,
 	); err != nil {
 		return nil, err
 	}
@@ -80,4 +83,30 @@ func (d *Database) CreateUser(
 	}
 
 	return &user, nil
+}
+
+func (d *Database) UpdateUser(
+	ctx context.Context,
+	user *models.User,
+) error {
+	query := `UPDATE users 
+		SET email = $1, first_name = $2, last_name = $3, password_hash = $4, stripe_customer_id = $5
+		WHERE id = $6`
+
+	cmdTag, err := d.Pool.Exec(ctx, query,
+		user.Email,
+		user.FirstName,
+		user.LastName,
+		user.PasswordHash,
+		user.StripeCustomerId,
+		user.Id,
+	)
+	if err != nil {
+		return err
+	}
+
+	if cmdTag.RowsAffected() == 0 {
+		return fmt.Errorf("could not update user")
+	}
+	return err
 }

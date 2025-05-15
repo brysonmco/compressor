@@ -6,12 +6,14 @@ import (
 	"github.com/awesomebfm/compressor/internal/auth"
 	"github.com/awesomebfm/compressor/internal/db"
 	"github.com/awesomebfm/compressor/internal/models"
+	"github.com/awesomebfm/compressor/internal/subscriptions"
 	"github.com/awesomebfm/compressor/internal/utils"
 	"github.com/go-chi/chi/v5"
 	"github.com/jackc/pgx/v5"
 	"log"
 	"net/http"
 	"os"
+	"strings"
 	"time"
 )
 
@@ -30,10 +32,10 @@ func NewAuthHandler(
 	}
 
 	r := chi.NewRouter()
-	r.Post("/auth/login", h.login)
-	r.Post("/auth/signup", h.signUp)
-	r.Post("/auth/refresh", h.refresh)
-	r.Post("/auth/logout", h.logout)
+	r.Post("/login", h.login)
+	r.Post("/signup", h.signUp)
+	r.Post("/refresh", h.refresh)
+	r.Post("/logout", h.logout)
 
 	return r
 }
@@ -216,6 +218,21 @@ func (h *AuthHandler) signUp(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Create Stripe customer
+	customer, err := subscriptions.CreateStripeCustomer(user)
+	if err != nil {
+		log.Printf("error creating customer: %v", err)
+		utils.WriteError(w, "error creating account", http.StatusInternalServerError, "internal_error", nil)
+		return
+	}
+	user.StripeCustomerId = customer.ID
+	err = h.Database.UpdateUser(r.Context(), user)
+	if err != nil {
+		log.Printf("error updating user: %v", err)
+		utils.WriteError(w, "error creating account", http.StatusInternalServerError, "internal_error", nil)
+		return
+	}
+
 	// Generate access token
 	accessToken, err := h.Auth.GenerateAccessToken(user.Id)
 	if err != nil {
@@ -341,7 +358,7 @@ func (h *AuthHandler) refresh(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *AuthHandler) logout(w http.ResponseWriter, r *http.Request) {
-	id, err := h.Auth.ValidateAccessToken(r.Header.Get("Authorization"))
+	id, err := h.Auth.ValidateAccessToken(strings.TrimPrefix(r.Header.Get("Authorization"), "Bearer "))
 	if err != nil {
 		utils.WriteError(w, "invalid token", http.StatusUnauthorized, "invalid_token", nil)
 		return
