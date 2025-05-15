@@ -1,4 +1,11 @@
 <script lang="ts">
+    export let form: any;
+    let showErrorModal = false;
+
+    $: if (form?.error) {
+        showErrorModal = true;
+    }
+
     let formData = {
         email: '',
         firstName: '',
@@ -64,7 +71,7 @@
 
 
 <div class="flex justify-center items-center h-screen">
-    <form action="http://localhost:8080/v1/signup" method="POST"
+    <form method="POST"
           class="flex flex-col gap-4 w-1/3 p-6 bg-white rounded-lg items-center">
         <span class="text-4xl font-semibold">Sign Up</span>
 
@@ -151,4 +158,16 @@
             Sign Up
         </button>
     </form>
+</div>
+
+<div class="fixed inset-0 z-50 flex items-center justify-center bg-gray-900/30">
+    <div class="bg-white rounded-2xl shadow-lg max-w-md p-6 text-center">
+        <h2 class="text-xl font-semibold mb-4">Error</h2>
+        <p class="mb-4 text-red-600">hello</p>
+        <button
+                class="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700"
+        >
+            Close
+        </button>
+    </div>
 </div>

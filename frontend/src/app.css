@@ -22,3 +22,19 @@ body {
     height: 100vh;
     color: #293141;
 }
+
+.no-outline:hover {
+    outline: 0;
+}
+
+.no-outline:focus {
+    outline: 0;
+}
+
+.no-outline:active {
+    outline: 0;
+}
+
+.no-outline {
+    outline: 0;
+}

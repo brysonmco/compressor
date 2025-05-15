@@ -6,6 +6,7 @@ import (
 	"github.com/awesomebfm/compressor/internal/auth"
 	"github.com/awesomebfm/compressor/internal/db"
 	"github.com/awesomebfm/compressor/internal/models"
+	"github.com/awesomebfm/compressor/internal/utils"
 	"github.com/go-chi/chi/v5"
 	"github.com/jackc/pgx/v5"
 	"io"
@@ -77,6 +78,14 @@ func (h *AuthHandler) login(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Generate access token
+	accessToken, err := h.Auth.GenerateAccessToken(user.Id)
+	if err != nil {
+		log.Printf("error generating access token: %v", err)
+		http.Error(w, "error creating account", http.StatusInternalServerError)
+		return
+	}
+
 	// Generate refresh token
 	refreshToken, err := h.Auth.GenerateRefreshToken()
 	if err != nil {
@@ -85,6 +94,7 @@ func (h *AuthHandler) login(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Set refresh token cookie
 	switch os.Getenv("DEPLOYMENT_TARGET") {
 	case "development":
 		http.SetCookie(w, &http.Cookie{
@@ -108,6 +118,33 @@ func (h *AuthHandler) login(w http.ResponseWriter, r *http.Request) {
 		})
 	}
 
+	// Hash refresh token
+	hashedRefreshToken := h.Auth.HashRefreshToken(refreshToken)
+
+	// Persist session
+	now := time.Now()
+	_, err = h.Database.CreateSession(r.Context(), &models.CreateSession{
+		TokenHash: hashedRefreshToken,
+		UserId:    user.Id,
+		ExpiresAt: now.Add(time.Hour * 24 * 30),
+		CreatedAt: now,
+	})
+	if err != nil {
+		log.Printf("error creating session: %v", err)
+		http.Error(w, "error creating account", http.StatusInternalServerError)
+		return
+	}
+
+	// Return access token
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	err = json.NewEncoder(w).Encode(map[string]string{
+		"accessToken": accessToken,
+	})
+	if err != nil {
+		log.Printf("error encoding JSON response: %v", err)
+		http.Error(w, "error creating account", http.StatusInternalServerError)
+	}
 }
 
 type signUpRequest struct {
@@ -122,7 +159,7 @@ func (h *AuthHandler) signUp(w http.ResponseWriter, r *http.Request) {
 	err := r.ParseForm()
 	if err != nil {
 		log.Printf("error parsing sign up request form data: %v", err)
-		http.Error(w, "error parsing JSON", http.StatusBadRequest)
+		utils.WriteError(w, "error parsing JSON", http.StatusBadRequest, "bad_json", nil)
 		return
 	}
 
@@ -133,13 +170,31 @@ func (h *AuthHandler) signUp(w http.ResponseWriter, r *http.Request) {
 	data.Password = r.FormValue("password")
 	data.ConfirmPassword = r.FormValue("confirmPassword")
 
-	if data.Email == "" || data.FirstName == "" || data.LastName == "" || data.Password == "" || data.ConfirmPassword == "" {
-		http.Error(w, "missing required fields", http.StatusBadRequest)
+	details := map[string]interface{}{}
+
+	if data.Email == "" {
+		details["email"] = "missing required field"
+	}
+	if data.FirstName == "" {
+		details["firstName"] = "missing required field"
+	}
+	if data.LastName == "" {
+		details["lastName"] = "missing required field"
+	}
+	if data.Password == "" {
+		details["password"] = "missing required field"
+	}
+	if data.ConfirmPassword == "" {
+		details["confirmPassword"] = "missing required field"
+	}
+
+	if len(details) > 0 {
+		utils.WriteError(w, "missing required fields", http.StatusBadRequest, "missing_fields", details)
 		return
 	}
 
 	if data.Password != data.ConfirmPassword {
-		http.Error(w, "passwords do not match", http.StatusBadRequest)
+		utils.WriteError(w, "passwords do not match", http.StatusBadRequest, "passwords_mismatch", nil)
 		return
 	}
 
@@ -249,5 +304,11 @@ func (h *AuthHandler) refresh(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *AuthHandler) logout(w http.ResponseWriter, r *http.Request) {
+	id, err := h.Auth.ValidateAccessToken(r.Header.Get("Authorization"))
+	if err != nil {
+		http.Error(w, "invalid access token", http.StatusUnauthorized)
+		return
+	}
 
+	h.Database.RevokeAllSessionsByUserId(r.Context(), id)
 }

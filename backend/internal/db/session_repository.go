@@ -93,3 +93,12 @@ func (d *Database) RevokeSession(
 	_, err := d.Pool.Exec(ctx, query, id)
 	return err
 }
+
+func (d *Database) RevokeAllSessionsByUserId(
+	ctx context.Context,
+	userId int64,
+) error {
+	query := `UPDATE sessions SET revoked = true WHERE user_id = $1`
+	_, err := d.Pool.Exec(ctx, query, userId)
+	return err
+}

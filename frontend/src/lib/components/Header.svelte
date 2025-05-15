@@ -1,3 +1,7 @@
+<script lang="ts">
+
+</script>
+
 <header class="flex flex-row justify-center">
     <div class="flex flex-row justify-between items-center w-full py-2 px-3 md:w-3/4">
         <div class="">
