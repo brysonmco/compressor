@@ -1,4 +1,6 @@
 <script lang="ts">
+    import { signup } from "$lib/api/auth";
+
     export let form: any;
     let showErrorModal = false;
 
@@ -21,6 +23,18 @@
         password: '',
         confirmPassword: ''
     };
+
+    function handleSubmit(event: Event) {
+        console.log("This has been called!");
+        event.preventDefault();
+        signup(
+            formData.email,
+            formData.firstName,
+            formData.lastName,
+            formData.password,
+            formData.confirmPassword
+        );
+    }
 
     function validateField(field: string) {
         switch (field) {
@@ -71,8 +85,8 @@
 
 
 <div class="flex justify-center items-center h-screen">
-    <form method="POST"
-          class="flex flex-col gap-4 w-1/3 p-6 bg-white rounded-lg items-center">
+    <form on:submit|preventDefault={signup}
+            class="flex flex-col gap-4 w-1/3 p-6 bg-white rounded-lg items-center" >
         <span class="text-4xl font-semibold">Sign Up</span>
 
         <label class="flex flex-col gap-1.5 w-full">
