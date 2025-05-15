@@ -11,7 +11,6 @@ export type UserProfile = {
     id: bigint,
     firstName: string,
     lastName: string,
-    avatarUrl: string,
 }
 
 export async function getUserProfile(id: bigint): Promise<UserProfile> {

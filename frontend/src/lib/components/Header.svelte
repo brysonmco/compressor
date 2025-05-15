@@ -1,5 +1,5 @@
 <script lang="ts">
-    let { authenticated, avatarUrl }: { authenticated: boolean, avatarUrl: string } = $props();
+    let { authenticated }: { authenticated: boolean } = $props();
 </script>
 
 <header class="flex flex-row justify-center">
@@ -16,14 +16,10 @@
         </nav>
 
         {#if authenticated}
-            <button>
-                <img src={avatarUrl} alt="avatar" class="rounded-full w-10 h-10">
-            </button>
+            <span>TODO</span>
         {:else}
             <a href="/signup" class="bg-brand px-6 py-2 rounded-lg text-bg font-medium text-xl hover:bg-brand-dark">Sign
                 Up</a>
         {/if}
-
-
     </div>
 </header>
