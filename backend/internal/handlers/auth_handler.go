@@ -282,12 +282,63 @@ func (h *AuthHandler) signUp(w http.ResponseWriter, r *http.Request) {
 	})
 	if err != nil {
 		log.Printf("error encoding JSON response: %v", err)
-		utils.WriteError(w, "error creating account", http.StatusInternalServerError, "internal_error", nil)
 	}
 }
 
 func (h *AuthHandler) refresh(w http.ResponseWriter, r *http.Request) {
+	token, err := r.Cookie("refreshToken")
+	if err != nil {
+		utils.WriteError(w, "missing refresh token", http.StatusBadRequest, "missing_refresh_token", nil)
+		return
+	}
 
+	hashedRefreshToken := h.Auth.HashRefreshToken(token.Value)
+
+	session, err := h.Database.FindSessionByTokenHash(r.Context(), hashedRefreshToken)
+	if err != nil && errors.Is(err, pgx.ErrNoRows) {
+		utils.WriteError(w, "invalid refresh token", http.StatusUnauthorized, "invalid_refresh_token", nil)
+		return
+	} else if err != nil {
+		log.Printf("error finding session by token hash: %v", err)
+		utils.WriteError(w, "error refreshing token", http.StatusInternalServerError, "internal_error", nil)
+		return
+	}
+
+	// Ensure session is still valid
+	if session.ExpiresAt.Before(time.Now()) {
+		utils.WriteError(w, "refresh token expired", http.StatusUnauthorized, "refresh_token_expired", nil)
+		return
+	}
+
+	// Ensure session has not been revoked
+	if session.Revoked {
+		utils.WriteError(w, "refresh token revoked", http.StatusUnauthorized, "refresh_token_revoked", nil)
+		return
+	}
+
+	// Ensure session was not created in the future
+	if session.CreatedAt.After(time.Now()) {
+		utils.WriteError(w, "refresh token created in the future", http.StatusUnauthorized, "refresh_token_created_in_future", nil)
+		return
+	}
+
+	// Generate access token
+	accessToken, err := h.Auth.GenerateAccessToken(session.UserId)
+	if err != nil {
+		log.Printf("error generating access token: %v", err)
+		utils.WriteError(w, "error refreshing token", http.StatusInternalServerError, "internal_error", nil)
+		return
+	}
+
+	// Return access token
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	err = json.NewEncoder(w).Encode(map[string]string{
+		"accessToken": accessToken,
+	})
+	if err != nil {
+		log.Printf("error encoding JSON response: %v", err)
+	}
 }
 
 func (h *AuthHandler) logout(w http.ResponseWriter, r *http.Request) {
@@ -301,5 +352,14 @@ func (h *AuthHandler) logout(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		log.Printf("error revoking all sessions by user ID: %v", err)
 		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	err = json.NewEncoder(w).Encode(map[string]bool{
+		"success": true,
+	})
+	if err != nil {
+		log.Printf("error encoding JSON response: %v", err)
 	}
 }
