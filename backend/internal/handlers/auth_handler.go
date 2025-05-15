@@ -156,19 +156,14 @@ type signUpRequest struct {
 }
 
 func (h *AuthHandler) signUp(w http.ResponseWriter, r *http.Request) {
-	err := r.ParseForm()
+	var data signUpRequest
+	err := json.NewDecoder(r.Body).Decode(&data)
 	if err != nil {
-		log.Printf("error parsing sign up request form data: %v", err)
-		utils.WriteError(w, "error parsing JSON", http.StatusBadRequest, "bad_json", nil)
+		log.Printf("error parsing sign up request JSON: %v", err)
+		utils.WriteError(w, "error parsing JSON", http.StatusBadRequest, "invalid_json", nil)
 		return
 	}
-
-	var data signUpRequest
-	data.Email = r.FormValue("email")
-	data.FirstName = r.FormValue("firstName")
-	data.LastName = r.FormValue("lastName")
-	data.Password = r.FormValue("password")
-	data.ConfirmPassword = r.FormValue("confirmPassword")
+	defer r.Body.Close()
 
 	details := map[string]interface{}{}
 
@@ -201,11 +196,11 @@ func (h *AuthHandler) signUp(w http.ResponseWriter, r *http.Request) {
 	// Ensure account does not already exist
 	_, err = h.Database.FindUserByEmail(r.Context(), data.Email)
 	if err == nil {
-		http.Error(w, "account already exists", http.StatusBadRequest)
+		utils.WriteError(w, "account already exists", http.StatusBadRequest, "account_exists", nil)
 		return
 	} else if !errors.Is(err, pgx.ErrNoRows) {
 		log.Printf("error finding user by email: %v", err)
-		http.Error(w, "error communicating with database", http.StatusInternalServerError)
+		utils.WriteError(w, "error creating account", http.StatusInternalServerError, "internal_error", nil)
 		return
 	}
 
@@ -213,7 +208,7 @@ func (h *AuthHandler) signUp(w http.ResponseWriter, r *http.Request) {
 	hashedPassword, err := h.Auth.HashPassword(data.Password)
 	if err != nil {
 		log.Printf("error hashing password: %v", err)
-		http.Error(w, "error creating account", http.StatusInternalServerError)
+		utils.WriteError(w, "error creating account", http.StatusInternalServerError, "internal_error", nil)
 		return
 	}
 
@@ -226,7 +221,7 @@ func (h *AuthHandler) signUp(w http.ResponseWriter, r *http.Request) {
 	})
 	if err != nil {
 		log.Printf("error creating user: %v", err)
-		http.Error(w, "error creating account", http.StatusInternalServerError)
+		utils.WriteError(w, "error creating account", http.StatusInternalServerError, "internal_error", nil)
 		return
 	}
 
@@ -234,7 +229,7 @@ func (h *AuthHandler) signUp(w http.ResponseWriter, r *http.Request) {
 	accessToken, err := h.Auth.GenerateAccessToken(user.Id)
 	if err != nil {
 		log.Printf("error generating access token: %v", err)
-		http.Error(w, "error creating account", http.StatusInternalServerError)
+		utils.WriteError(w, "error creating account", http.StatusInternalServerError, "internal_error", nil)
 		return
 	}
 
@@ -242,7 +237,7 @@ func (h *AuthHandler) signUp(w http.ResponseWriter, r *http.Request) {
 	refreshToken, err := h.Auth.GenerateRefreshToken()
 	if err != nil {
 		log.Printf("error generating refresh token: %v", err)
-		http.Error(w, "error creating account", http.StatusInternalServerError)
+		utils.WriteError(w, "error creating account", http.StatusInternalServerError, "internal_error", nil)
 		return
 	}
 
@@ -283,7 +278,7 @@ func (h *AuthHandler) signUp(w http.ResponseWriter, r *http.Request) {
 	})
 	if err != nil {
 		log.Printf("error creating session: %v", err)
-		http.Error(w, "error creating account", http.StatusInternalServerError)
+		utils.WriteError(w, "error creating account", http.StatusInternalServerError, "internal_error", nil)
 		return
 	}
 
@@ -295,7 +290,7 @@ func (h *AuthHandler) signUp(w http.ResponseWriter, r *http.Request) {
 	})
 	if err != nil {
 		log.Printf("error encoding JSON response: %v", err)
-		http.Error(w, "error creating account", http.StatusInternalServerError)
+		utils.WriteError(w, "error creating account", http.StatusInternalServerError, "internal_error", nil)
 	}
 }
 
