@@ -293,9 +293,13 @@ func (h *AuthHandler) refresh(w http.ResponseWriter, r *http.Request) {
 func (h *AuthHandler) logout(w http.ResponseWriter, r *http.Request) {
 	id, err := h.Auth.ValidateAccessToken(r.Header.Get("Authorization"))
 	if err != nil {
-		http.Error(w, "invalid access token", http.StatusUnauthorized)
+		utils.WriteError(w, "invalid token", http.StatusUnauthorized, "invalid_token", nil)
 		return
 	}
 
-	h.Database.RevokeAllSessionsByUserId(r.Context(), id)
+	err = h.Database.RevokeAllSessionsByUserId(r.Context(), id)
+	if err != nil {
+		log.Printf("error revoking all sessions by user ID: %v", err)
+		return
+	}
 }
