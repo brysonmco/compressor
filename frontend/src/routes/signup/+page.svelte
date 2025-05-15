@@ -77,7 +77,7 @@
                     required
                     bind:value={formData.email}
                     on:blur={() => validateField('email')}
-                    class="rounded-lg bg-bg border-2 text-lg font-medium {formErrors.email ? 'border-red-500' : 'border-slate-200' } focus:border-brand focus:outline-none">
+                    class="rounded-lg bg-bg border-2 text-lg font-medium {formErrors.email ? 'border-red-500' : 'border-slate-200' } focus:border-brand active:outline-none focus:outline-none  ring-0 focus:ring-0">
             {#if formErrors.email}
                 <span class="text-red-500 text-md font-medium">{formErrors.email}</span>
             {/if}
@@ -93,7 +93,7 @@
                         required
                         bind:value={formData.firstName}
                         on:blur={() => validateField('firstName')}
-                        class="rounded-lg bg-bg border-2 text-lg font-medium {formErrors.firstName ? 'border-red-500' : 'border-slate-200' } focus:border-brand focus:outline-none">
+                        class="rounded-lg bg-bg border-2 text-lg font-medium {formErrors.firstName ? 'border-red-500' : 'border-slate-200' } focus:border-brand active:outline-none focus:outline-none  ring-0 focus:ring-0">
                 {#if formErrors.firstName}
                     <span class="text-red-500 text-md font-medium">{formErrors.firstName}</span>
                 {/if}
@@ -108,7 +108,7 @@
                         required
                         bind:value={formData.lastName}
                         on:blur={() => validateField('lastName')}
-                        class="rounded-lg bg-bg border-2 text-lg font-medium {formErrors.lastName ? 'border-red-500' : 'border-slate-200' }  focus:border-brand focus:outline-none">
+                        class="rounded-lg bg-bg border-2 text-lg font-medium {formErrors.lastName ? 'border-red-500' : 'border-slate-200' }  focus:border-brand active:outline-none focus:outline-none  ring-0 focus:ring-0">
                 {#if formErrors.lastName}
                     <span class="text-red-500 text-md font-medium">{formErrors.lastName}</span>
                 {/if}
@@ -125,7 +125,7 @@
                     required
                     bind:value={formData.password}
                     on:blur={() => validateField('password')}
-                    class="rounded-lg bg-bg border-2 text-lg font-medium {formErrors.password ? 'border-red-500' : 'border-slate-200' }  focus:border-brand focus:outline-none">
+                    class="rounded-lg bg-bg border-2 text-lg font-medium {formErrors.password ? 'border-red-500' : 'border-slate-200' }  focus:border-brand active:outline-none focus:outline-none  ring-0 focus:ring-0">
             {#if formErrors.password}
                 <span class="text-red-500 text-md font-medium">{formErrors.password}</span>
             {/if}
@@ -140,7 +140,7 @@
                     required
                     bind:value={formData.confirmPassword}
                     on:blur={() => validateField('confirmPassword')}
-                    class="rounded-lg bg-bg border-2 text-lg font-medium {formErrors.confirmPassword ? 'border-red-500' : 'border-slate-200' }  focus:border-brand focus:outline-none">
+                    class="rounded-lg bg-bg border-2 text-lg font-medium {formErrors.confirmPassword ? 'border-red-500' : 'border-slate-200' }  focus:border-brand active:outline-none focus:outline-none  ring-0 focus:ring-0">
             {#if formErrors.confirmPassword}
                 <span class="text-red-500 text-md font-medium">{formErrors.confirmPassword}</span>
             {/if}
