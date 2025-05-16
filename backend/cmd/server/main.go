@@ -6,6 +6,7 @@ import (
 	"github.com/awesomebfm/compressor/internal/handlers"
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
+	"github.com/go-chi/cors"
 	"github.com/stripe/stripe-go/v82"
 	"log"
 	"net/http"
@@ -28,6 +29,25 @@ func main() {
 
 	// Router
 	r := chi.NewRouter()
+
+	// CORS
+	var allowedOrigins []string
+	switch os.Getenv("DEPLOYMENT_TARGET") {
+	case "development":
+		allowedOrigins = []string{"http://localhost:5173"}
+		break
+	default:
+		allowedOrigins = []string{"https://compressor.brysonmcbreen.dev"}
+	}
+
+	r.Use(cors.Handler(cors.Options{
+		AllowedOrigins:   allowedOrigins,
+		AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
+		AllowedHeaders:   []string{"Accept", "Authorization", "Content-Type", "X-CSRF-Token"},
+		ExposedHeaders:   []string{"Link"},
+		AllowCredentials: true,
+		MaxAge:           300,
+	}))
 
 	// Middleware
 	r.Use(middleware.RequestID)
