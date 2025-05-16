@@ -1,13 +1,9 @@
 <script lang="ts">
-    import { signup } from "$lib/api/auth";
-    import {redirect} from "@sveltejs/kit";
+    import {signup} from "$lib/api/auth";
 
-    export let form: any;
     let showErrorModal = false;
+    let errorModalMessage = '';
 
-    $: if (form?.error) {
-        showErrorModal = true;
-    }
 
     let formData = {
         email: '',
@@ -37,6 +33,17 @@
         );
 
         const data = await res.json();
+        console.log(data);
+
+
+        if (data.fieldErrors) {
+            formErrors = data.fieldErrors;
+        }
+
+        if (!data.success && data.message) {
+            showErrorModal = true;
+            errorModalMessage = data.message;
+        }
 
         if (data.redirect) {
             window.location.href = data.redirect;
@@ -93,7 +100,7 @@
 
 <div class="flex justify-center items-center h-screen">
     <form on:submit|preventDefault={handleSubmit}
-            class="flex flex-col gap-4 w-1/3 p-6 bg-white rounded-lg items-center" >
+          class="flex flex-col gap-4 w-1/3 p-6 bg-white rounded-lg items-center">
         <span class="text-4xl font-semibold">Sign Up</span>
 
         <label class="flex flex-col gap-1.5 w-full">
@@ -181,14 +188,16 @@
     </form>
 </div>
 
-<!--<div class="fixed inset-0 z-50 flex items-center justify-center bg-gray-900/30">
-    <div class="bg-white rounded-2xl shadow-lg max-w-md p-6 text-center">
-        <h2 class="text-xl font-semibold mb-4">Error</h2>
-        <p class="mb-4 text-red-600">hello</p>
-        <button
-                class="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700"
-        >
-            Close
-        </button>
+{#if showErrorModal}
+    <div class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/30">
+        <div class="flex flex-col bg-white rounded-lg p-6 text-center gap-4">
+            <h2 class="text-3xl font-medium">Error Signing Up</h2>
+            <p class="text-lg text-red-600">{ errorModalMessage }</p>
+            <button
+                    class="bg-brand w-full py-2 text-bg text-lg rounded-lg hover:bg-brand-dark hover:cursor-pointer"
+                    on:click={() => (showErrorModal = false)}>
+                Close
+            </button>
+        </div>
     </div>
-</div>-->
+{/if}

@@ -37,47 +37,63 @@ export async function signup(
     password: string,
     confirmPassword: string
 ) {
-    const response = await fetch(apiBaseUrl + "/auth/signup", {
-        method: "POST",
-        credentials: "include",
-        headers: {
-            "Content-Type": "application/json"
-        },
-        body: JSON.stringify({
-            email,
-            firstName,
-            lastName,
-            password,
-            confirmPassword,
-        })
-    });
+    try {
+        const response = await fetch(apiBaseUrl + "/auth/signup", {
+            method: "POST",
+            credentials: "include",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+                email,
+                firstName,
+                lastName,
+                password,
+                confirmPassword,
+            })
+        });
 
-    const result = await response.json();
+        const result = await response.json();
 
-    if (!response.ok) {
-        switch (result.error) {
-            case "missing_fields":
-                // TODO: implement this later
-                break;
-            case "passwords_mismatch":
-                // TODO: implement this later
-                break;
-            case "account_exists":
-                return json({
-                    success: false,
-                    redirect: '/login?email=' + email + '&error=account_exists',
-                    statusCode: 303,
-                });
-                break;
-            default:
-            // TODO: implement this later
+        if (!response.ok) {
+            switch (result.error) {
+                case "missing_fields":
+                    return json({
+                        success: false,
+                        fieldErrors: result.details,
+                    });
+                case "passwords_mismatch":
+                    return json({
+                        success: false,
+                        fieldErrors: {
+                            password: "Passwords do not match",
+                            confirmPassword: "Passwords do not match",
+                        }
+                    });
+                case "account_exists":
+                    return json({
+                        success: false,
+                        redirect: '/login?email=' + email + '&error=account_exists',
+                        statusCode: 303,
+                    });
+                default:
+                    return json({
+                        success: false,
+                        message: "Error occurred while signing up. Please try again later."
+                    });
+            }
         }
-    }
 
-    accessToken.set(result.accessToken);
-    return json({
-        success: true,
-        redirect: '/',
-        statusCode: 303,
-    });
+        accessToken.set(result.accessToken);
+        return json({
+            success: true,
+            redirect: '/',
+            statusCode: 303,
+        });
+    } catch (err) {
+        return json({
+            success: false,
+            message: "Error occurred while signing up. Please try again later."
+        });
+    }
 }
