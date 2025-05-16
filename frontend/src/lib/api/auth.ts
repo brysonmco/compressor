@@ -1,7 +1,7 @@
 import {apiBaseUrl} from "$lib/config";
 import {accessToken} from "$lib/stores/auth";
 import {get} from "svelte/store";
-import {redirect} from "@sveltejs/kit";
+import {json, redirect} from "@sveltejs/kit";
 
 export async function refreshAccessToken(): Promise<boolean> {
     try {
@@ -63,7 +63,11 @@ export async function signup(
                 // TODO: implement this later
                 break;
             case "account_exists":
-                redirect(303, '/login?email=' + email);
+                return json({
+                    success: false,
+                    redirect: '/login?email=' + email + '&error=account_exists',
+                    statusCode: 303,
+                });
                 break;
             default:
             // TODO: implement this later
@@ -71,5 +75,9 @@ export async function signup(
     }
 
     accessToken.set(result.accessToken);
-    return redirect(303, '/');
+    return json({
+        success: true,
+        redirect: '/',
+        statusCode: 303,
+    });
 }

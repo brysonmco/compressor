@@ -1,5 +1,6 @@
 <script lang="ts">
     import { signup } from "$lib/api/auth";
+    import {redirect} from "@sveltejs/kit";
 
     export let form: any;
     let showErrorModal = false;
@@ -24,16 +25,22 @@
         confirmPassword: ''
     };
 
-    function handleSubmit(event: Event | SubmitEvent) {
+    async function handleSubmit(event: Event | SubmitEvent) {
         event.preventDefault();
         console.log(formData);
-        signup(
+        const res = await signup(
             formData.email,
             formData.firstName,
             formData.lastName,
             formData.password,
             formData.confirmPassword
         );
+
+        const data = await res.json();
+
+        if (data.redirect) {
+            window.location.href = data.redirect;
+        }
     }
 
     function validateField(field: string) {
