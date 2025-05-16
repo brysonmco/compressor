@@ -1,7 +1,6 @@
 import {apiBaseUrl} from "$lib/config";
 import {accessToken} from "$lib/stores/auth";
 import {get} from "svelte/store";
-import {resolveRoute} from "$app/paths";
 import {redirect} from "@sveltejs/kit";
 
 export async function refreshAccessToken(): Promise<boolean> {
@@ -36,7 +35,7 @@ export async function signup(
     firstName: string,
     lastName: string,
     password: string,
-    passwordConfirm: string
+    confirmPassword: string
 ) {
     const response = await fetch(apiBaseUrl + "/auth/signup", {
         method: "POST",
@@ -49,7 +48,7 @@ export async function signup(
             firstName,
             lastName,
             password,
-            passwordConfirm,
+            confirmPassword,
         })
     });
 
@@ -58,9 +57,11 @@ export async function signup(
     if (!response.ok) {
         switch (result.error) {
             case "missing_fields":
-            // TODO: implement this later
+                // TODO: implement this later
+                break;
             case "passwords_mismatch":
-            // TODO: implement this later
+                // TODO: implement this later
+                break;
             case "account_exists":
                 redirect(303, '/login?email=' + email);
                 break;

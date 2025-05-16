@@ -24,9 +24,9 @@
         confirmPassword: ''
     };
 
-    function handleSubmit(event: Event) {
-        console.log("This has been called!");
+    function handleSubmit(event: Event | SubmitEvent) {
         event.preventDefault();
+        console.log(formData);
         signup(
             formData.email,
             formData.firstName,
@@ -85,7 +85,7 @@
 
 
 <div class="flex justify-center items-center h-screen">
-    <form on:submit|preventDefault={signup}
+    <form on:submit|preventDefault={handleSubmit}
             class="flex flex-col gap-4 w-1/3 p-6 bg-white rounded-lg items-center" >
         <span class="text-4xl font-semibold">Sign Up</span>
 
