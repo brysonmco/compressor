@@ -259,6 +259,7 @@ func (h *AuthHandler) signUp(w http.ResponseWriter, r *http.Request) {
 			Path:     "v1/auth/refresh",
 			SameSite: http.SameSiteStrictMode,
 		})
+		break
 	default:
 		http.SetCookie(w, &http.Cookie{
 			Name:     "refreshToken",
