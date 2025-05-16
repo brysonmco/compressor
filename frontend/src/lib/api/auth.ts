@@ -30,6 +30,37 @@ export async function fetchWithAuth() {
     }
 }
 
+export async function login(
+    email: string, password: string
+) {
+    try {
+        const response = await fetch(apiBaseUrl + "/auth/login", {
+            method: "POST",
+            credentials: "include",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+                email,
+                password,
+            })
+        });
+
+        const result = await response.json();
+
+        return json({
+            success: true,
+            redirect: '/',
+            statusCode: 303,
+        });
+    } catch (err) {
+        return json({
+            success: false,
+            message: "Error occurred while logging in. Please try again later."
+        });
+    }
+}
+
 export async function signup(
     email: string,
     firstName: string,

@@ -23,7 +23,6 @@
 
     async function handleSubmit(event: Event | SubmitEvent) {
         event.preventDefault();
-        console.log(formData);
         const res = await signup(
             formData.email,
             formData.firstName,
@@ -33,8 +32,6 @@
         );
 
         const data = await res.json();
-        console.log(data);
-
 
         if (data.fieldErrors) {
             formErrors = data.fieldErrors;
