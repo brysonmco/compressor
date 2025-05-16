@@ -100,7 +100,7 @@
 
 <div class="flex justify-center items-center h-screen">
     <form on:submit|preventDefault={handleSubmit}
-          class="flex flex-col gap-4 w-1/3 p-6 bg-white rounded-lg items-center">
+          class="flex flex-col gap-4 2xl:w-1/3 md:w-2/3 md:m-0 m-4 p-6 bg-white rounded-lg items-center">
         <span class="text-4xl font-semibold">Sign Up</span>
 
         <label class="flex flex-col gap-1.5 w-full">
@@ -118,7 +118,7 @@
             {/if}
         </label>
 
-        <div class="flex flex-row w-full gap-4">
+        <div class="flex sm:flex-row flex-col w-full gap-4">
             <label class="flex flex-col gap-1.5 flex-grow">
                 <span class="text-lg font-medium">First Name</span>
                 <input
@@ -185,6 +185,7 @@
                 class="bg-brand w-full py-2 text-bg text-xl font-medium rounded-lg hover:bg-brand-dark hover:cursor-pointer">
             Sign Up
         </button>
+        <span class="text-lg font-medium">Already have an account? <a href="/login" class="text-brand hover:underline">Login</a></span>
     </form>
 </div>
 
