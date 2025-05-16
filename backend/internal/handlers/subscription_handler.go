@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"encoding/json"
+	"errors"
 	"github.com/awesomebfm/compressor/internal/auth"
 	"github.com/awesomebfm/compressor/internal/db"
 	"github.com/awesomebfm/compressor/internal/utils"
@@ -40,8 +41,11 @@ type createCheckoutSessionRequest struct {
 func (h *SubscriptionHandler) createCheckoutSession(w http.ResponseWriter, r *http.Request) {
 	// Grab their ID
 	id, err := h.Auth.ValidateAccessToken(strings.TrimPrefix(r.Header.Get("Authorization"), "Bearer "))
-	if err != nil {
-		utils.WriteError(w, "invalid token", http.StatusUnauthorized, "invalid_token", nil)
+	if err != nil && errors.Is(err, errors.New("expired_token")) {
+		utils.WriteError(w, "token has expired", http.StatusUnauthorized, "expired_token", nil)
+		return
+	} else if err != nil {
+		utils.WriteError(w, "token is invalid", http.StatusUnauthorized, "invalid_token", nil)
 		return
 	}
 

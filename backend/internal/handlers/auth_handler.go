@@ -357,8 +357,11 @@ func (h *AuthHandler) refresh(w http.ResponseWriter, r *http.Request) {
 
 func (h *AuthHandler) logout(w http.ResponseWriter, r *http.Request) {
 	id, err := h.Auth.ValidateAccessToken(strings.TrimPrefix(r.Header.Get("Authorization"), "Bearer "))
-	if err != nil {
-		utils.WriteError(w, "invalid token", http.StatusUnauthorized, "invalid_token", nil)
+	if err != nil && errors.Is(err, errors.New("expired_token")) {
+		utils.WriteError(w, "token has expired", http.StatusUnauthorized, "expired_token", nil)
+		return
+	} else if err != nil {
+		utils.WriteError(w, "token is invalid", http.StatusUnauthorized, "invalid_token", nil)
 		return
 	}
 

@@ -6,6 +6,7 @@ import (
 	"crypto/sha256"
 	"encoding/base64"
 	"encoding/hex"
+	"fmt"
 	"golang.org/x/crypto/bcrypt"
 	"strconv"
 	"time"
@@ -71,7 +72,15 @@ func (a *Auth) ValidateAccessToken(token string) (int64, error) {
 		return 0, err
 	}
 	if issued.After(time.Now()) {
+		return 0, fmt.Errorf("token is not yet valid")
+	}
+
+	exp, err := parsedToken.GetExpiration()
+	if err != nil {
 		return 0, err
+	}
+	if exp.Before(time.Now()) {
+		return 0, fmt.Errorf("expired_token")
 	}
 
 	return id, nil
