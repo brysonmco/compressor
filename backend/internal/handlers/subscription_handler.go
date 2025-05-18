@@ -9,23 +9,28 @@ import (
 	"github.com/go-chi/chi/v5"
 	"github.com/stripe/stripe-go/v82"
 	"github.com/stripe/stripe-go/v82/checkout/session"
+	"github.com/stripe/stripe-go/v82/webhook"
+	"io"
 	"log"
 	"net/http"
 	"strings"
 )
 
 type SubscriptionHandler struct {
-	Database *db.Database
-	Auth     *auth.Auth
+	Database       *db.Database
+	Auth           *auth.Auth
+	EndpointSecret string
 }
 
 func NewSubscriptionHandler(
 	database *db.Database,
 	auth *auth.Auth,
+	endpointSecret string,
 ) http.Handler {
 	h := &SubscriptionHandler{
-		Database: database,
-		Auth:     auth,
+		Database:       database,
+		Auth:           auth,
+		EndpointSecret: endpointSecret,
 	}
 
 	r := chi.NewRouter()
@@ -96,6 +101,32 @@ func (h *SubscriptionHandler) createCheckoutSession(w http.ResponseWriter, r *ht
 	}
 }
 
-func (h *SubscriptionHandler) stripeWebhook(w http.ResponseWriter, r *http.Request) {
-	// TODO: Implement
+func (h *SubscriptionHandler) handleStripeWebhook(w http.ResponseWriter, r *http.Request) {
+	const maxBodyBytes = int64(65536)
+	r.Body = http.MaxBytesReader(w, r.Body, maxBodyBytes)
+	payload, err := io.ReadAll(r.Body)
+	if err != nil {
+		log.Printf("error reading webhook payload: %v", err)
+		utils.WriteError(w, "could not read webhook payload", http.StatusBadRequest, "bad_payload", nil)
+		return
+	}
+
+	event, err := webhook.ConstructEvent(payload, r.Header.Get("Stripe-Signature"), h.EndpointSecret)
+	if err != nil {
+		log.Printf("error constructing webhook event: %v", err)
+		utils.WriteError(w, "could not construct webhook event", http.StatusBadRequest, "bad_payload", nil)
+		return
+	}
+
+	switch event.Type {
+	case "customer.subscription.created":
+		var subscription stripe.Subscription
+		err = json.Unmarshal(event.Data.Raw, &subscription)
+		if err != nil {
+			log.Printf("error unmarshalling webhook event: %v", err)
+			utils.WriteError(w, "could not unmarshall webhook event", http.StatusBadRequest, "bad_payload", nil)
+			return
+		}
+	}
+
 }

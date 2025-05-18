@@ -1,38 +1,67 @@
 import {apiBaseUrl} from "$lib/config";
 import {accessToken} from "$lib/stores/auth";
-import {get} from "svelte/store";
-import {json, redirect} from "@sveltejs/kit";
+import {json} from "@sveltejs/kit";
 
-export async function refreshAccessToken(): Promise<boolean> {
+// TODO: I'm not sure if I want the refreshAccessToken function to redirect the user, I'm still not sure about how I want to handle refreshing.
+export async function refreshAccessToken(): Promise<Response> {
+    // Clear the access token
+    accessToken.set(null)
+
     try {
-        const res = await fetch(apiBaseUrl + "/auth/refresh", {
+        const response = await fetch(apiBaseUrl + "/auth/refresh", {
             method: "POST",
             credentials: "include",
         });
-        if (!res.ok) {
-            throw new Error("Failed to refresh access token");
+
+        const data = await response.json();
+        if (!response.ok) {
+            // TODO: This switch is a little redundant at the moment, but I intend to change how this is handled in the future.
+            switch (data.error) {
+                case "invalid_token":
+                    return json({
+                        success: false,
+                        redirect: '/login',
+                        statusCode: 303,
+                    });
+                case "expired_token":
+                    return json({
+                        success: false,
+                        redirect: '/login',
+                        statusCode: 303,
+                    });
+                case "revoked_token":
+                    return json({
+                        success: false,
+                        redirect: '/login',
+                        statusCode: 303,
+                    });
+                default:
+                    return json({
+                        success: false,
+                        redirect: '/login',
+                        statusCode: 303,
+                    });
+            }
         }
 
-        const data = await res.json();
         accessToken.set(data.accessToken);
-        return true;
+        return json({
+            success: true,
+        });
     } catch (e) {
-        accessToken.set(null)
-        return false;
+        return json({
+            success: false,
+            redirect: '/login',
+            statusCode: 303,
+        });
     }
 }
 
-export async function fetchWithAuth() {
-    let token = get(accessToken);
-    if (!token) {
-        await refreshAccessToken();
-        token = get(accessToken);
-    }
-}
 
 export async function login(
-    email: string, password: string
-) {
+    email: string,
+    password: string
+): Promise<Response> {
     try {
         const response = await fetch(apiBaseUrl + "/auth/login", {
             method: "POST",
@@ -46,8 +75,32 @@ export async function login(
             })
         });
 
-        const result = await response.json();
+        const data = await response.json();
 
+        if (!response.ok) {
+            switch (data.error) {
+                case "missing_fields":
+                    return json({
+                        success: false,
+                        fieldErrors: data.details,
+                    });
+                case "invalid_credentials":
+                    return json({
+                        success: false,
+                        fieldErrors: {
+                            email: "Incorrect email or password.",
+                            password: "Incorrect email or password.",
+                        }
+                    });
+                default:
+                    return json({
+                        success: false,
+                        message: "Error occurred while logging in. Please try again later."
+                    });
+            }
+        }
+
+        accessToken.set(data.accessToken);
         return json({
             success: true,
             redirect: '/',
@@ -67,7 +120,7 @@ export async function signup(
     lastName: string,
     password: string,
     confirmPassword: string
-) {
+): Promise<Response> {
     try {
         const response = await fetch(apiBaseUrl + "/auth/signup", {
             method: "POST",
@@ -84,16 +137,16 @@ export async function signup(
             })
         });
 
-        const result = await response.json();
+        const data = await response.json();
 
         if (!response.ok) {
-            switch (result.error) {
+            switch (data.error) {
                 case "missing_fields":
                     return json({
                         success: false,
-                        fieldErrors: result.details,
+                        fieldErrors: data.details,
                     });
-                case "passwords_mismatch":
+                case "password_mismatch":
                     return json({
                         success: false,
                         fieldErrors: {
@@ -104,7 +157,7 @@ export async function signup(
                 case "account_exists":
                     return json({
                         success: false,
-                        redirect: '/login?email=' + email + '&error=account_exists',
+                        redirect: '/login?email=' + email,
                         statusCode: 303,
                     });
                 default:
@@ -115,7 +168,7 @@ export async function signup(
             }
         }
 
-        accessToken.set(result.accessToken);
+        accessToken.set(data.accessToken);
         return json({
             success: true,
             redirect: '/',

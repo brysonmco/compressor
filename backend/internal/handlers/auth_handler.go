@@ -55,6 +55,20 @@ func (h *AuthHandler) login(w http.ResponseWriter, r *http.Request) {
 	}
 	defer r.Body.Close()
 
+	details := map[string]interface{}{}
+
+	if data.Email == "" {
+		details["email"] = "missing required field"
+	}
+	if data.Password == "" {
+		details["password"] = "missing required field"
+	}
+
+	if len(details) > 0 {
+		utils.WriteError(w, "missing required fields", http.StatusBadRequest, "missing_fields", details)
+		return
+	}
+
 	// Fetch user's account from the database
 	user, err := h.Database.FindUserByEmail(r.Context(), data.Email)
 	if err != nil && errors.Is(err, pgx.ErrNoRows) {
@@ -181,7 +195,7 @@ func (h *AuthHandler) signUp(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if data.Password != data.ConfirmPassword {
-		utils.WriteError(w, "passwords do not match", http.StatusBadRequest, "passwords_mismatch", nil)
+		utils.WriteError(w, "passwords do not match", http.StatusBadRequest, "password_mismatch", nil)
 		return
 	}
 
@@ -311,7 +325,7 @@ func (h *AuthHandler) refresh(w http.ResponseWriter, r *http.Request) {
 
 	session, err := h.Database.FindSessionByTokenHash(r.Context(), hashedRefreshToken)
 	if err != nil && errors.Is(err, pgx.ErrNoRows) {
-		utils.WriteError(w, "invalid refresh token", http.StatusUnauthorized, "invalid_refresh_token", nil)
+		utils.WriteError(w, "invalid refresh token", http.StatusUnauthorized, "invalid_token", nil)
 		return
 	} else if err != nil {
 		log.Printf("error finding session by token hash: %v", err)
@@ -321,13 +335,13 @@ func (h *AuthHandler) refresh(w http.ResponseWriter, r *http.Request) {
 
 	// Ensure session is still valid
 	if session.ExpiresAt.Before(time.Now()) {
-		utils.WriteError(w, "refresh token expired", http.StatusUnauthorized, "refresh_token_expired", nil)
+		utils.WriteError(w, "refresh token expired", http.StatusUnauthorized, "expired_token", nil)
 		return
 	}
 
 	// Ensure session has not been revoked
 	if session.Revoked {
-		utils.WriteError(w, "refresh token revoked", http.StatusUnauthorized, "refresh_token_revoked", nil)
+		utils.WriteError(w, "refresh token revoked", http.StatusUnauthorized, "revoked_token", nil)
 		return
 	}
 
