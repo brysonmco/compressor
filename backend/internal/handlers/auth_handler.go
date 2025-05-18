@@ -32,10 +32,12 @@ func NewAuthHandler(
 	}
 
 	r := chi.NewRouter()
-	r.Post("/login", h.login)
-	r.Post("/signup", h.signUp)
-	r.Post("/refresh", h.refresh)
-	r.Post("/logout", h.logout)
+	r.Post("/login", h.handleLogin)
+	r.Post("/signup", h.handleSignUp)
+	r.Post("/refresh", h.handleRefresh)
+	r.Post("/logout", h.handleLogout)
+	r.Post("/verify-email", h.handleVerifyEmail)
+	r.Post("/update-password", h.handleUpdatePassword)
 
 	return r
 }
@@ -45,7 +47,7 @@ type loginRequest struct {
 	Password string `json:"password"`
 }
 
-func (h *AuthHandler) login(w http.ResponseWriter, r *http.Request) {
+func (h *AuthHandler) handleLogin(w http.ResponseWriter, r *http.Request) {
 	var data loginRequest
 	err := json.NewDecoder(r.Body).Decode(&data)
 	if err != nil {
@@ -161,7 +163,7 @@ type signUpRequest struct {
 	ConfirmPassword string `json:"confirmPassword"`
 }
 
-func (h *AuthHandler) signUp(w http.ResponseWriter, r *http.Request) {
+func (h *AuthHandler) handleSignUp(w http.ResponseWriter, r *http.Request) {
 	var data signUpRequest
 	err := json.NewDecoder(r.Body).Decode(&data)
 	if err != nil {
@@ -314,7 +316,7 @@ func (h *AuthHandler) signUp(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func (h *AuthHandler) refresh(w http.ResponseWriter, r *http.Request) {
+func (h *AuthHandler) handleRefresh(w http.ResponseWriter, r *http.Request) {
 	token, err := r.Cookie("refreshToken")
 	if err != nil {
 		utils.WriteError(w, "missing refresh token", http.StatusBadRequest, "missing_refresh_token", nil)
@@ -370,7 +372,7 @@ func (h *AuthHandler) refresh(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func (h *AuthHandler) logout(w http.ResponseWriter, r *http.Request) {
+func (h *AuthHandler) handleLogout(w http.ResponseWriter, r *http.Request) {
 	id, err := h.Auth.ValidateAccessToken(strings.TrimPrefix(r.Header.Get("Authorization"), "Bearer "))
 	if err != nil && errors.Is(err, errors.New("expired_token")) {
 		utils.WriteError(w, "token has expired", http.StatusUnauthorized, "expired_token", nil)
@@ -394,4 +396,14 @@ func (h *AuthHandler) logout(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		log.Printf("error encoding JSON response: %v", err)
 	}
+}
+
+func (h *AuthHandler) handleVerifyEmail(w http.ResponseWriter, r *http.Request) {
+	utils.WriteError(w, "not implemented", http.StatusNotImplemented, "not_implemented", nil)
+	return
+}
+
+func (h *AuthHandler) handleUpdatePassword(w http.ResponseWriter, r *http.Request) {
+	utils.WriteError(w, "not implemented", http.StatusNotImplemented, "not_implemented", nil)
+	return
 }
