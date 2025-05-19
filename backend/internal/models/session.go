@@ -12,8 +12,8 @@ type Session struct {
 }
 
 type CreateSession struct {
-	TokenHash string `json:"tokenHash"`
-	UserId    int64  `json:"userId"`
-	ExpiresAt time.Time
-	CreatedAt time.Time
+	TokenHash string    `json:"tokenHash"`
+	UserId    int64     `json:"userId"`
+	ExpiresAt time.Time `json:"expiresAt"`
+	CreatedAt time.Time `json:"createdAt"`
 }

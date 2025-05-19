@@ -22,7 +22,11 @@ CREATE TABLE subscriptions
 (
     id serial PRIMARY KEY,
     user_id serial NOT NULL REFERENCES users(id),
-    plan_id text NOT NULL,
-    stripe_subscription_id text UNIQUE,
-    status text NOT NULL
-)
+    stripe_subscription_id text UNIQUE NOT NULL,
+    stripe_price_id text NOT NULL,
+    status text NOT NULL,
+    current_period_start timestamp NOT NULL,
+    current_period_end timestamp NOT NULL,
+    created_at timestamp DEFAULT now(),
+    updated_at timestamp DEFAULT now()
+);

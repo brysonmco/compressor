@@ -56,6 +56,31 @@ func (d *Database) FindUserByID(
 	return &user, nil
 }
 
+func (d *Database) FindUserByStripeCustomerID(
+	ctx context.Context,
+	stripeCustomerId string,
+) (*models.User, error) {
+	query := `SELECT id, email, first_name, last_name, password_hash, stripe_customer_id
+		FROM users
+		WHERE stripe_customer_id = $1`
+
+	row := d.Pool.QueryRow(ctx, query, stripeCustomerId)
+
+	var user models.User
+	if err := row.Scan(
+		&user.Id,
+		&user.Email,
+		&user.FirstName,
+		&user.LastName,
+		&user.PasswordHash,
+		&user.StripeCustomerId,
+	); err != nil {
+		return nil, err
+	}
+
+	return &user, nil
+}
+
 func (d *Database) CreateUser(
 	ctx context.Context,
 	userReq *models.CreateUser,

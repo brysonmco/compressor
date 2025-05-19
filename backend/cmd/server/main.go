@@ -4,6 +4,7 @@ import (
 	"github.com/awesomebfm/compressor/internal/auth"
 	"github.com/awesomebfm/compressor/internal/db"
 	"github.com/awesomebfm/compressor/internal/handlers"
+	internal_middleware "github.com/awesomebfm/compressor/internal/middleware"
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
 	"github.com/go-chi/cors"
@@ -26,6 +27,7 @@ func main() {
 
 	// Auth
 	ath := auth.NewAuth()
+	authMiddleware := internal_middleware.NewAuthMiddleware(ath, database)
 
 	// Router
 	r := chi.NewRouter()
@@ -39,7 +41,6 @@ func main() {
 	default:
 		allowedOrigins = []string{"https://compressor.brysonmcbreen.dev"}
 	}
-
 	r.Use(cors.Handler(cors.Options{
 		AllowedOrigins:   allowedOrigins,
 		AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
@@ -57,7 +58,11 @@ func main() {
 
 	// Handlers
 	r.Mount("/v1/auth", handlers.NewAuthHandler(database, ath))
-	r.Mount("/v1/subscriptions", handlers.NewSubscriptionHandler(database, ath))
+	r.Mount("/v1/subscriptions", handlers.NewSubscriptionHandler(
+		database,
+		ath,
+		authMiddleware,
+		os.Getenv("STRIPE_ENDPOINT_SECRET")))
 
 	log.Fatal(http.ListenAndServe(os.Getenv("LISTEN_ADDR"), r))
 }
