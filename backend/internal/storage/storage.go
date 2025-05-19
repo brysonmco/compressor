@@ -13,7 +13,8 @@ func NewStorage() (*Storage, error) {
 	return &Storage{}, nil
 }
 
-func (s *Storage) GenerateUploadURL(
+// GenerateUploadURLForUploads generates a pre-signed URL for the client to upload an uncompressed file.
+func (s *Storage) GenerateUploadURLForUploads(
 	ctx context.Context,
 	id int64,
 	expires time.Time,
@@ -21,7 +22,26 @@ func (s *Storage) GenerateUploadURL(
 	return "", fmt.Errorf("not implemented")
 }
 
-func (s *Storage) GenerateDownloadURL(
+// GenerateUploadURLForDownloads generates a pre-signed URL for the VM to upload a compressed file.
+func (s *Storage) GenerateUploadURLForDownloads(
+	ctx context.Context,
+	id int64,
+	expires time.Time,
+) (string, error) {
+	return "", fmt.Errorf("not implemented")
+}
+
+// GenerateDownloadURLForUploads generates a pre-signed URL for the VM to download an uncompressed file.
+func (s *Storage) GenerateDownloadURLForUploads(
+	ctx context.Context,
+	id int64,
+	expires time.Time,
+) (string, error) {
+	return "", fmt.Errorf("not implemented")
+}
+
+// GenerateDownloadURLForDownloads generates a pre-signed URL for the client to download a compressed file.
+func (s *Storage) GenerateDownloadURLForDownloads(
 	ctx context.Context,
 	id int64,
 	expires time.Time,

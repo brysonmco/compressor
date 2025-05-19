@@ -10,6 +10,8 @@ services:
     depends_on:
       db:
         condition: service_healthy
+      minio:
+          condition: service_healthy
   db:
     image: postgres:latest
     env_file:
@@ -23,5 +25,21 @@ services:
       interval: 5s
       timeout: 5s
       retries: 5
+  minio:
+    image: minio/minio:latest
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    env_file:
+      - .env
+    volumes:
+      - minio_data:/data
+    command: server /data --console-address ":9001"
+    healthcheck:
+      test: [ "CMD", "mc", "ls", "myminio" ]
+      interval: 5s
+      timeout: 5s
+      retries: 5
 volumes:
   pg_data:
+  minio_data:

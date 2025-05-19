@@ -52,7 +52,7 @@ func (h *CompressionHandler) handleCreateCompressionJob(w http.ResponseWriter, r
 	}
 
 	// Generate upload URL
-	uploadURL, err := h.Storage.GenerateUploadURL(r.Context(), job.Id, time.Now().Add(time.Hour*24))
+	uploadURL, err := h.Storage.GenerateUploadURLForUploads(r.Context(), job.Id, time.Now().Add(time.Hour*24))
 	if err != nil {
 		log.Printf("error generating upload URL: %v", err)
 		utils.WriteError(w, "error creating job", http.StatusInternalServerError, "internal_error", nil)

@@ -4,7 +4,7 @@ import (
 	"github.com/awesomebfm/compressor/internal/auth"
 	"github.com/awesomebfm/compressor/internal/db"
 	"github.com/awesomebfm/compressor/internal/handlers"
-	internal_middleware "github.com/awesomebfm/compressor/internal/middleware"
+	internalmiddleware "github.com/awesomebfm/compressor/internal/middleware"
 	"github.com/awesomebfm/compressor/internal/storage"
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
@@ -28,7 +28,7 @@ func main() {
 
 	// Auth
 	ath := auth.NewAuth()
-	authMiddleware := internal_middleware.NewAuthMiddleware(ath, database)
+	authMiddleware := internalmiddleware.NewAuthMiddleware(ath, database)
 
 	// Storage
 	strge, err := storage.NewStorage()
