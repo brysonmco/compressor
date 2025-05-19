@@ -2,7 +2,6 @@ package handlers
 
 import (
 	"encoding/json"
-	"github.com/awesomebfm/compressor/internal/auth"
 	"github.com/awesomebfm/compressor/internal/db"
 	"github.com/awesomebfm/compressor/internal/middleware"
 	"github.com/awesomebfm/compressor/internal/models"
@@ -19,20 +18,17 @@ import (
 
 type SubscriptionHandler struct {
 	Database       *db.Database
-	Auth           *auth.Auth
 	AuthMiddleware *middleware.AuthMiddleware
 	EndpointSecret string
 }
 
 func NewSubscriptionHandler(
 	database *db.Database,
-	auth *auth.Auth,
 	authMiddleware *middleware.AuthMiddleware,
 	endpointSecret string,
 ) http.Handler {
 	h := &SubscriptionHandler{
 		Database:       database,
-		Auth:           auth,
 		AuthMiddleware: authMiddleware,
 		EndpointSecret: endpointSecret,
 	}

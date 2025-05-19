@@ -5,6 +5,7 @@ import (
 	"github.com/awesomebfm/compressor/internal/db"
 	"github.com/awesomebfm/compressor/internal/handlers"
 	internal_middleware "github.com/awesomebfm/compressor/internal/middleware"
+	"github.com/awesomebfm/compressor/internal/storage"
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
 	"github.com/go-chi/cors"
@@ -28,6 +29,12 @@ func main() {
 	// Auth
 	ath := auth.NewAuth()
 	authMiddleware := internal_middleware.NewAuthMiddleware(ath, database)
+
+	// Storage
+	strge, err := storage.NewStorage()
+	if err != nil {
+		log.Fatalf("failed to connect to object storage: %v", err)
+	}
 
 	// Router
 	r := chi.NewRouter()
@@ -60,9 +67,12 @@ func main() {
 	r.Mount("/v1/auth", handlers.NewAuthHandler(database, ath))
 	r.Mount("/v1/subscriptions", handlers.NewSubscriptionHandler(
 		database,
-		ath,
 		authMiddleware,
 		os.Getenv("STRIPE_ENDPOINT_SECRET")))
+	r.Mount("/v1/compression", handlers.NewCompressionHandler(
+		database,
+		authMiddleware,
+		strge))
 
 	log.Fatal(http.ListenAndServe(os.Getenv("LISTEN_ADDR"), r))
 }
