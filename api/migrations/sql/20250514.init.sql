@@ -30,3 +30,17 @@ CREATE TABLE subscriptions
     created_at timestamp DEFAULT now(),
     updated_at timestamp DEFAULT now()
 );
+
+CREATE TABLE jobs
+(
+    id serial PRIMARY KEY,
+    user_id serial NOT NULL REFERENCES users(id),
+    created_at timestamp DEFAULT now(),
+    updated_at timestamp DEFAULT now(),
+    input_codec text,
+    input_container text,
+    input_size text,
+    output_codec text,
+    output_container text,
+    output_size text
+);

@@ -39,10 +39,10 @@ func (d *Database) CreateSubscription(
 	subscriptionReq models.CreateSubscription,
 ) (*models.Subscription, error) {
 	query := `INSERT INTO subscriptions (user_id, stripe_subscription_id, stripe_price_id, status, current_period_start, 
-                           current_period_end)
-    		VALUES ($1, $2, $3, $4, $5, $6)
-    		RETURNING id, user_id, stripe_subscription_id, stripe_price_id, status, current_period_start,
-    		current_period_end, created_at, updated_at`
+                           current_period_end) 
+			VALUES ($1, $2, $3, $4, $5, $6)
+    		RETURNING id, user_id, stripe_subscription_id, stripe_price_id, status, current_period_start, 
+    		    current_period_end, created_at, updated_at`
 
 	var subscription models.Subscription
 	if err := d.Pool.QueryRow(ctx, query,

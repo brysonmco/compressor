@@ -1,24 +1,26 @@
 package models
 
+import "time"
+
 type Job struct {
-	Id              int64  `json:"id"`
-	UserId          int64  `json:"user_id"`
-	CreatedAt       string `json:"created_at"`
-	LastModified    string `json:"last_modified"`
-	InputCodec      string `json:"input_codec"`
-	InputContainer  string `json:"input_container"`
-	InputSize       int64  `json:"input_size"`
-	OutputCodec     string `json:"output_codec"`
-	OutputContainer string `json:"output_container"`
-	OutputSize      int64  `json:"output_size"`
+	Id              int64     `json:"id"`
+	UserId          int64     `json:"userId"`
+	CreatedAt       time.Time `json:"createdAt"`
+	UpdatedAt       time.Time `json:"updatedAt"`
+	InputCodec      string    `json:"inputCodec"`
+	InputContainer  string    `json:"inputContainer"`
+	InputSize       string    `json:"inputSize"`
+	OutputCodec     string    `json:"outputCodec"`
+	OutputContainer string    `json:"output_container"`
+	OutputSize      string    `json:"output_size"`
 }
 
 type CreateJob struct {
-	UserId          int64  `json:"user_id"`
-	InputCodec      string `json:"input_codec"`
-	InputContainer  string `json:"input_container"`
-	InputSize       int64  `json:"input_size"`
-	OutputCodec     string `json:"output_codec"`
-	OutputContainer string `json:"output_container"`
-	OutputSize      int64  `json:"output_size"`
+	UserId          int64  `json:"userId"`
+	InputCodec      string `json:"inputCodec"`
+	InputContainer  string `json:"inputContainer"`
+	InputSize       string `json:"inputSize"`
+	OutputCodec     string `json:"outputCodec"`
+	OutputContainer string `json:"outputContainer"`
+	OutputSize      string `json:"outputSize"`
 }
