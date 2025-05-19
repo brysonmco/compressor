@@ -31,7 +31,13 @@ func main() {
 	authMiddleware := internalmiddleware.NewAuthMiddleware(ath, database)
 
 	// Storage
-	strge, err := storage.NewStorage()
+	strge, err := storage.NewStorage(
+		os.Getenv("S3_UPLOADS_BUCKET"),
+		os.Getenv("S3_ENDPOINT"),
+		os.Getenv("S3_ACCESS_KEY"),
+		os.Getenv("S3_SECRET_KEY"),
+		os.Getenv("DEPLOYMENT_TARGET") != "development",
+	)
 	if err != nil {
 		log.Fatalf("failed to connect to object storage: %v", err)
 	}

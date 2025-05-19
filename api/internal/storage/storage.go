@@ -3,23 +3,65 @@ package storage
 import (
 	"context"
 	"fmt"
+	"github.com/minio/minio-go/v7"
+	"github.com/minio/minio-go/v7/pkg/credentials"
 	"time"
 )
 
 type Storage struct {
+	Client        *minio.Client
+	UploadsBucket string
 }
 
-func NewStorage() (*Storage, error) {
-	return &Storage{}, nil
+func NewStorage(
+	uploadsBucket string,
+	endpoint string,
+	accessKey string,
+	secretKey string,
+	secure bool,
+) (*Storage, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	client, err := minio.New(endpoint, &minio.Options{
+		Creds:  credentials.NewStaticV4(accessKey, secretKey, ""),
+		Secure: secure,
+	})
+	if err != nil {
+		return nil, fmt.Errorf("failed to create S3 client: %v", err)
+	}
+
+	// Check if the bucket exists
+	bucketExists, err := client.BucketExists(ctx, uploadsBucket)
+	if err != nil {
+		return nil, fmt.Errorf("failed to check if bucket exists: %v", err)
+	} else if !bucketExists {
+		return nil, fmt.Errorf("bucket does not exist")
+	}
+
+	return &Storage{
+		Client:        client,
+		UploadsBucket: uploadsBucket,
+	}, nil
 }
 
 // GenerateUploadURLForUploads generates a pre-signed URL for the client to upload an uncompressed file.
 func (s *Storage) GenerateUploadURLForUploads(
 	ctx context.Context,
 	id int64,
+	fileType string,
 	expires time.Time,
 ) (string, error) {
-	return "", fmt.Errorf("not implemented")
+	url, err := s.Client.PresignedPutObject(
+		ctx,
+		s.UploadsBucket,
+		fmt.Sprintf("%d.%v", id, fileType),
+		expires.Sub(time.Now()))
+	if err != nil {
+		return "", err
+	}
+
+	return url.String(), nil
 }
 
 // GenerateUploadURLForDownloads generates a pre-signed URL for the VM to upload a compressed file.
