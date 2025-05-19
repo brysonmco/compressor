@@ -39,6 +39,8 @@ func NewSubscriptionHandler(
 
 	r := chi.NewRouter()
 	r.With(authMiddleware.Protected).Post("/checkout", h.handleCreateCheckoutSession)
+	r.With(authMiddleware.Protected).Post("/cancel", h.handleCancelSubscription)
+	r.Post("/webhook", h.handleStripeWebhook)
 
 	return r
 }
@@ -125,6 +127,10 @@ func (h *SubscriptionHandler) handleStripeWebhook(w http.ResponseWriter, r *http
 		log.Printf("unhandled webhook event type: %s", evnt.Type)
 		utils.WriteError(w, "unhandled webhook event type", http.StatusBadRequest, "bad_payload", nil)
 	}
+
+}
+
+func (h *SubscriptionHandler) handleCancelSubscription(w http.ResponseWriter, r *http.Request) {
 
 }
 

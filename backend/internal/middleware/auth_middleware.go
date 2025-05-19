@@ -7,6 +7,7 @@ import (
 	"github.com/awesomebfm/compressor/internal/db"
 	"github.com/awesomebfm/compressor/internal/utils"
 	"net/http"
+	"strings"
 )
 
 type AuthMiddleware struct {
@@ -23,7 +24,7 @@ func NewAuthMiddleware(auth *auth.Auth, database *db.Database) *AuthMiddleware {
 
 func (m *AuthMiddleware) Protected(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		id, err := m.Auth.ValidateAccessToken(r.Header.Get("Authorization"))
+		id, err := m.Auth.ValidateAccessToken(strings.TrimPrefix(r.Header.Get("Authorization"), "Bearer "))
 		if err != nil && errors.Is(err, errors.New("expired_token")) {
 			utils.WriteError(w, "token has expired", http.StatusUnauthorized, "expired_token", nil)
 			return
