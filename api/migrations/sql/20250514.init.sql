@@ -37,6 +37,7 @@ CREATE TABLE jobs
     user_id serial NOT NULL REFERENCES users(id),
     created_at timestamp DEFAULT now(),
     updated_at timestamp DEFAULT now(),
+    file_uploaded bool DEFAULT FALSE,
     input_codec text,
     input_container text,
     input_size text,

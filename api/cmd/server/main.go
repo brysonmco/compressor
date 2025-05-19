@@ -75,7 +75,7 @@ func main() {
 		database,
 		authMiddleware,
 		os.Getenv("STRIPE_ENDPOINT_SECRET")))
-	r.Mount("/v1/compression", handlers.NewCompressionHandler(
+	r.Mount("/v1/compress", handlers.NewCompressionHandler(
 		database,
 		authMiddleware,
 		strge))

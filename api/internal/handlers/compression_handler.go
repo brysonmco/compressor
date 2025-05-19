@@ -38,8 +38,31 @@ func NewCompressionHandler(
 	return r
 }
 
+type createCompressionJobRequest struct {
+	Container string `json:"container"`
+}
+
 func (h *CompressionHandler) handleCreateCompressionJob(w http.ResponseWriter, r *http.Request) {
 	id := r.Context().Value("userID").(int64)
+
+	// Parse request body
+	var req createCompressionJobRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		utils.WriteError(w, "error parsing JSON", http.StatusBadRequest, "invalid_json", nil)
+		return
+	}
+
+	// Ensure valid container
+	allowedContainers := []string{"mp4", "mkv", "mov", "avi", "webm", "flv", "ts", "mpg", "ogg", "wav"}
+	for i := 0; i < len(allowedContainers); i++ {
+		if req.Container == allowedContainers[i] {
+			break
+		}
+		if i == len(allowedContainers)-1 {
+			utils.WriteError(w, "invalid container", http.StatusBadRequest, "invalid_container", nil)
+			return
+		}
+	}
 
 	// Create job
 	job, err := h.Database.CreateJob(r.Context(), &models.CreateJob{
@@ -57,6 +80,7 @@ func (h *CompressionHandler) handleCreateCompressionJob(w http.ResponseWriter, r
 		log.Printf("error generating upload URL: %v", err)
 		utils.WriteError(w, "error creating job", http.StatusInternalServerError, "internal_error", nil)
 	}
+
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 	err = json.NewEncoder(w).Encode(map[string]string{
@@ -68,6 +92,69 @@ func (h *CompressionHandler) handleCreateCompressionJob(w http.ResponseWriter, r
 	}
 }
 
-func (h *CompressionHandler) handleUploadComplete(w http.ResponseWriter, r *http.Request) {
+type uploadCompleteRequest struct {
+	JobId int64 `json:"job_id"`
+}
 
+func (h *CompressionHandler) handleUploadComplete(w http.ResponseWriter, r *http.Request) {
+	id := r.Context().Value("userID").(int64)
+
+	// Parse request body
+	var req uploadCompleteRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		utils.WriteError(w, "error parsing JSON", http.StatusBadRequest, "invalid_json", nil)
+		return
+	}
+
+	// Find job
+	job, err := h.Database.FindJobById(r.Context(), req.JobId)
+	if err != nil {
+		utils.WriteError(w, "job not found", http.StatusBadRequest, "job_not_found", nil)
+		return
+	}
+
+	if job.UserId != id {
+		// We don't want to leak information about another user's jobs
+		utils.WriteError(w, "job not found", http.StatusBadRequest, "job_not_found", nil)
+		return
+	}
+
+	// Ensure file has not yet been uploaded
+	if job.FileUploaded {
+		utils.WriteError(w, "file already uploaded", http.StatusBadRequest, "file_already_uploaded", nil)
+		return
+	}
+
+	// Check that the file was actually uploaded
+	inUploads, err := h.Storage.FileInUploads(r.Context(), job.Id, job.InputContainer)
+	if err != nil {
+		log.Printf("error checking if file exists: %v", err)
+		utils.WriteError(w, "error checking if file exists", http.StatusInternalServerError, "internal_error", nil)
+		return
+	}
+	if !inUploads {
+		utils.WriteError(w, "file not found", http.StatusBadRequest, "file_not_found", nil)
+		return
+	}
+
+	// Update job
+	job.FileUploaded = true
+	err = h.Database.UpdateJob(r.Context(), job)
+	if err != nil {
+		log.Printf("error updating job: %v", err)
+		utils.WriteError(w, "internal service error", http.StatusInternalServerError, "internal_error", nil)
+		return
+	}
+
+	// Tell compression-service to provision a VM
+	// TODO: Implement
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	err = json.NewEncoder(w).Encode(map[string]bool{
+		"success": true,
+	})
+	if err != nil {
+		log.Printf("error encoding JSON response: %v", err)
+	}
 }

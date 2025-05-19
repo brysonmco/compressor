@@ -7,6 +7,7 @@ type Job struct {
 	UserId          int64     `json:"userId"`
 	CreatedAt       time.Time `json:"createdAt"`
 	UpdatedAt       time.Time `json:"updatedAt"`
+	FileUploaded    bool      `json:"fileUploaded"`
 	InputCodec      string    `json:"inputCodec"`
 	InputContainer  string    `json:"inputContainer"`
 	InputSize       string    `json:"inputSize"`

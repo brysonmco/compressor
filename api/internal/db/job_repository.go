@@ -2,6 +2,7 @@ package db
 
 import (
 	"context"
+	"fmt"
 	"github.com/awesomebfm/compressor/internal/models"
 )
 
@@ -9,7 +10,7 @@ func (d *Database) FindJobById(
 	ctx context.Context,
 	id int64,
 ) (*models.Job, error) {
-	query := `SELECT id, user_id, created_at, updated_at, input_codec, input_container, input_size, output_codec, 
+	query := `SELECT id, user_id, created_at, updated_at, file_uploaded, input_codec, input_container, input_size, output_codec, 
        output_container, output_size 
 		FROM jobs
 		WHERE id = $1`
@@ -22,6 +23,7 @@ func (d *Database) FindJobById(
 		&job.UserId,
 		&job.CreatedAt,
 		&job.UpdatedAt,
+		&job.FileUploaded,
 		&job.InputCodec,
 		&job.InputContainer,
 		&job.InputSize,
@@ -49,7 +51,7 @@ func (d *Database) CreateJob(
 	query := `INSERT INTO jobs (user_id, input_codec, input_container, input_size, output_codec, output_container, 
                   output_size)
     		VALUES ($1, $2, $3, $4, $5, $6, $7)
-    		RETURNING id, user_id, created_at, updated_at, input_codec, input_container, input_size, output_codec,
+    		RETURNING id, user_id, created_at, updated_at, file_uploaded, input_codec, input_container, input_size, output_codec,
     		    output_container, output_size`
 
 	var job models.Job
@@ -66,6 +68,7 @@ func (d *Database) CreateJob(
 		&job.UserId,
 		&job.CreatedAt,
 		&job.UpdatedAt,
+		&job.FileUploaded,
 		&job.InputCodec,
 		&job.InputContainer,
 		&job.InputSize,
@@ -81,7 +84,32 @@ func (d *Database) CreateJob(
 
 func (d *Database) UpdateJob(
 	ctx context.Context,
-	jobReq *models.Job,
-) (*models.Job, error) {
-	return nil, nil
+	job *models.Job,
+) error {
+	query := `UPDATE jobs 
+		SET user_id = $1, created_at = $2, updated_at = $3, file_uploaded = $4, input_codec = $5, input_container = $6, 
+		    input_size = $7, output_codec = $8, output_container = $9, output_size = $10
+		WHERE id = $11`
+
+	cmdTag, err := d.Pool.Exec(ctx, query,
+		job.UserId,
+		job.CreatedAt,
+		job.UpdatedAt,
+		job.FileUploaded,
+		job.InputCodec,
+		job.InputContainer,
+		job.InputSize,
+		job.OutputCodec,
+		job.OutputContainer,
+		job.OutputSize,
+		job.Id,
+	)
+	if err != nil {
+		return err
+	}
+
+	if cmdTag.RowsAffected() == 0 {
+		return fmt.Errorf("could not update job")
+	}
+	return nil
 }

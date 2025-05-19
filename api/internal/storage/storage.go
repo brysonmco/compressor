@@ -94,8 +94,15 @@ func (s *Storage) GenerateDownloadURLForDownloads(
 func (s *Storage) FileInUploads(
 	ctx context.Context,
 	id int64,
+	extension string,
 ) (bool, error) {
-	return false, fmt.Errorf("not implemented")
+	_, err := s.Client.GetObject(ctx, s.UploadsBucket, fmt.Sprintf("%d.%v", id, extension), minio.GetObjectOptions{})
+	if err != nil && minio.ToErrorResponse(err).Code == "NoSuchKey" {
+		return false, nil
+	} else if err != nil {
+		return false, err
+	}
+	return true, nil
 }
 
 func (s *Storage) FileInDownloads(
