@@ -93,7 +93,7 @@ func (h *CompressionHandler) handleCreateCompressionJob(w http.ResponseWriter, r
 }
 
 type uploadCompleteRequest struct {
-	JobId int64 `json:"job_id"`
+	JobId int64 `json:"jobId"`
 }
 
 func (h *CompressionHandler) handleUploadComplete(w http.ResponseWriter, r *http.Request) {

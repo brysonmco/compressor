@@ -38,6 +38,8 @@ CREATE TABLE jobs
     created_at timestamp DEFAULT now(),
     updated_at timestamp DEFAULT now(),
     file_uploaded bool DEFAULT FALSE,
+    file_name text,
+    status text,
     input_codec text,
     input_container text,
     input_size text,
