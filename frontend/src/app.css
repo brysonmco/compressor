@@ -9,12 +9,12 @@
 
     --color-brand: #0077cc;
     --color-brand-dark: #005fa3;
-    --color-bg: #f1f3f4;
+    /*--color-bg: #f1f3f4;*/
+    --color-bg: #f9fafb;
 }
 
 * {
     box-sizing: border-box;
-    overflow: hidden;
 }
 
 body {
