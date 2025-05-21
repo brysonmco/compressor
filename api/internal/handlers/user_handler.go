@@ -25,7 +25,7 @@ func NewUserHandler(
 	}
 
 	r := chi.NewRouter()
-	r.With(authMiddleware.Protected).Post("/profile", h.handleGetProfile)
+	r.With(authMiddleware.Protected).Get("/profile", h.handleGetProfile)
 
 	return r
 }
@@ -45,7 +45,7 @@ func (h *UserHandler) handleGetProfile(w http.ResponseWriter, r *http.Request) {
 	// Get subscription
 	_, err = h.Database.FindActiveSubscriptionByUserId(r.Context(), id)
 	if err != nil && !errors.Is(err, pgx.ErrNoRows) {
-		utils.WriteError(w, r, http.StatusInternalServerError, "error fetching subscription", "subscription_not_found", nil)
+		utils.WriteError(w, r, http.StatusInternalServerError, "internal error", "internal_error", nil)
 		return
 	} else if err != nil {
 		// IRDK
