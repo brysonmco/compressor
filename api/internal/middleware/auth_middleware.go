@@ -26,10 +26,10 @@ func (m *AuthMiddleware) Protected(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		id, err := m.Auth.ValidateAccessToken(strings.TrimPrefix(r.Header.Get("Authorization"), "Bearer "))
 		if err != nil && errors.Is(err, errors.New("expired_token")) {
-			utils.WriteError(w, "token has expired", http.StatusUnauthorized, "expired_token", nil)
+			utils.WriteError(w, r, http.StatusUnauthorized, "token has expired", "expired_token", nil)
 			return
 		} else if err != nil {
-			utils.WriteError(w, "invalid token", http.StatusUnauthorized, "invalid_token", nil)
+			utils.WriteError(w, r, http.StatusUnauthorized, "invalid token", "invalid_token", nil)
 			return
 		}
 

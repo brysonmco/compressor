@@ -10,7 +10,6 @@ import (
 	"github.com/go-chi/chi/v5"
 	"log"
 	"net/http"
-	"strconv"
 	"time"
 )
 
@@ -48,7 +47,7 @@ func (h *CompressionHandler) handleCreateCompressionJob(w http.ResponseWriter, r
 	// Parse request body
 	var req createCompressionJobRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		utils.WriteError(w, "error parsing JSON", http.StatusBadRequest, "invalid_json", nil)
+		utils.WriteError(w, r, http.StatusBadRequest, "error parsing JSON", "invalid_json", nil)
 		return
 	}
 
@@ -59,7 +58,7 @@ func (h *CompressionHandler) handleCreateCompressionJob(w http.ResponseWriter, r
 			break
 		}
 		if i == len(allowedContainers)-1 {
-			utils.WriteError(w, "invalid container", http.StatusBadRequest, "invalid_container", nil)
+			utils.WriteError(w, r, http.StatusBadRequest, "invalid container", "invalid_container", nil)
 			return
 		}
 	}
@@ -70,7 +69,7 @@ func (h *CompressionHandler) handleCreateCompressionJob(w http.ResponseWriter, r
 	})
 	if err != nil {
 		log.Printf("error creating job: %v", err)
-		utils.WriteError(w, "error creating job", http.StatusInternalServerError, "internal_error", nil)
+		utils.WriteError(w, r, http.StatusInternalServerError, "error creating job", "internal_error", nil)
 		return
 	}
 
@@ -78,18 +77,13 @@ func (h *CompressionHandler) handleCreateCompressionJob(w http.ResponseWriter, r
 	uploadURL, err := h.Storage.GenerateUploadURLForUploads(r.Context(), job.Id, "mp4", time.Now().Add(time.Hour))
 	if err != nil {
 		log.Printf("error generating upload URL: %v", err)
-		utils.WriteError(w, "error creating job", http.StatusInternalServerError, "internal_error", nil)
+		utils.WriteError(w, r, http.StatusInternalServerError, "error creating job", "internal_error", nil)
 	}
 
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
-	err = json.NewEncoder(w).Encode(map[string]string{
-		"uploadURL": uploadURL,
-		"JobId":     strconv.FormatInt(job.Id, 10),
+	utils.WriteSuccess(w, r, http.StatusOK, "job created", map[string]interface{}{
+		"uploadUrl": uploadURL,
+		"jobId":     job.Id,
 	})
-	if err != nil {
-		log.Printf("error encoding JSON response: %v", err)
-	}
 }
 
 type uploadCompleteRequest struct {
@@ -102,26 +96,26 @@ func (h *CompressionHandler) handleUploadComplete(w http.ResponseWriter, r *http
 	// Parse request body
 	var req uploadCompleteRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		utils.WriteError(w, "error parsing JSON", http.StatusBadRequest, "invalid_json", nil)
+		utils.WriteError(w, r, http.StatusBadRequest, "error parsing JSON", "invalid_json", nil)
 		return
 	}
 
 	// Find job
 	job, err := h.Database.FindJobById(r.Context(), req.JobId)
 	if err != nil {
-		utils.WriteError(w, "job not found", http.StatusBadRequest, "job_not_found", nil)
+		utils.WriteError(w, r, http.StatusBadRequest, "job not found", "job_not_found", nil)
 		return
 	}
 
 	if job.UserId != id {
 		// We don't want to leak information about another user's jobs
-		utils.WriteError(w, "job not found", http.StatusBadRequest, "job_not_found", nil)
+		utils.WriteError(w, r, http.StatusBadRequest, "job not found", "job_not_found", nil)
 		return
 	}
 
 	// Ensure file has not yet been uploaded
 	if job.FileUploaded {
-		utils.WriteError(w, "file already uploaded", http.StatusBadRequest, "file_already_uploaded", nil)
+		utils.WriteError(w, r, http.StatusBadRequest, "file already uploaded", "file_already_uploaded", nil)
 		return
 	}
 
@@ -129,11 +123,11 @@ func (h *CompressionHandler) handleUploadComplete(w http.ResponseWriter, r *http
 	inUploads, err := h.Storage.FileInUploads(r.Context(), job.Id, job.InputContainer)
 	if err != nil {
 		log.Printf("error checking if file exists: %v", err)
-		utils.WriteError(w, "error checking if file exists", http.StatusInternalServerError, "internal_error", nil)
+		utils.WriteError(w, r, http.StatusInternalServerError, "error checking if file exists", "internal_error", nil)
 		return
 	}
 	if !inUploads {
-		utils.WriteError(w, "file not found", http.StatusBadRequest, "file_not_found", nil)
+		utils.WriteError(w, r, http.StatusBadRequest, "file not found", "file_not_found", nil)
 		return
 	}
 
@@ -142,19 +136,12 @@ func (h *CompressionHandler) handleUploadComplete(w http.ResponseWriter, r *http
 	err = h.Database.UpdateJob(r.Context(), job)
 	if err != nil {
 		log.Printf("error updating job: %v", err)
-		utils.WriteError(w, "internal service error", http.StatusInternalServerError, "internal_error", nil)
+		utils.WriteError(w, r, http.StatusInternalServerError, "internal service error", "internal_error", nil)
 		return
 	}
 
 	// Tell compression-service to provision a VM
 	// TODO: Implement
 
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
-	err = json.NewEncoder(w).Encode(map[string]bool{
-		"success": true,
-	})
-	if err != nil {
-		log.Printf("error encoding JSON response: %v", err)
-	}
+	utils.WriteSuccess(w, r, http.StatusOK, "file uploaded", nil)
 }

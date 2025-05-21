@@ -7,6 +7,7 @@ type Subscription struct {
 	UserId               int64     `json:"userId"`
 	StripeSubscriptionId string    `json:"stripeSubscriptionId"`
 	StripePriceId        string    `json:"stripePriceId"`
+	PlanId               int64     `json:"planId"`
 	Status               string    `json:"status"`
 	CurrentPeriodStart   time.Time `json:"currentPeriodStart"`
 	CurrentPeriodEnd     time.Time `json:"currentPeriodEnd"`
@@ -18,6 +19,7 @@ type CreateSubscription struct {
 	UserId               int64     `json:"userId"`
 	StripeSubscriptionId string    `json:"stripeSubscriptionId"`
 	StripePriceId        string    `json:"stripePriceId"`
+	PlanId               int64     `json:"planId"`
 	Status               string    `json:"status"`
 	CurrentPeriodStart   time.Time `json:"currentPeriodStart"`
 	CurrentPeriodEnd     time.Time `json:"currentPeriodEnd"`

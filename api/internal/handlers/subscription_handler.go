@@ -54,7 +54,7 @@ func (h *SubscriptionHandler) handleCreateCheckoutSession(w http.ResponseWriter,
 	err := json.NewDecoder(r.Body).Decode(&data)
 	if err != nil {
 		log.Printf("error parsing login request JSON: %v", err)
-		utils.WriteError(w, "error parsing JSON", http.StatusBadRequest, "invalid_json", nil)
+		utils.WriteError(w, r, http.StatusBadRequest, "error parsing JSON", "invalid_json", nil)
 		return
 	}
 
@@ -62,7 +62,7 @@ func (h *SubscriptionHandler) handleCreateCheckoutSession(w http.ResponseWriter,
 	user, err := h.Database.FindUserByID(r.Context(), id)
 	if err != nil {
 		log.Printf("error finding user: %v", err)
-		utils.WriteError(w, "error creating checkout session", http.StatusInternalServerError, "internal_error", nil)
+		utils.WriteError(w, r, http.StatusInternalServerError, "error creating checkout session", "internal_error", nil)
 		return
 	}
 
@@ -82,18 +82,13 @@ func (h *SubscriptionHandler) handleCreateCheckoutSession(w http.ResponseWriter,
 	sess, err := session.New(params)
 	if err != nil {
 		log.Printf("error creating checkout session: %v", err)
-		utils.WriteError(w, "error creating checkout session", http.StatusInternalServerError, "internal_error", nil)
+		utils.WriteError(w, r, http.StatusInternalServerError, "error creating checkout session", "internal_error", nil)
 	}
 
 	// Return checkout url
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
-	err = json.NewEncoder(w).Encode(map[string]string{
+	utils.WriteSuccess(w, r, http.StatusOK, "checkout session created", map[string]string{
 		"checkoutUrl": sess.URL,
 	})
-	if err != nil {
-		log.Printf("error encoding JSON response: %v", err)
-	}
 }
 
 func (h *SubscriptionHandler) handleStripeWebhook(w http.ResponseWriter, r *http.Request) {
@@ -102,14 +97,14 @@ func (h *SubscriptionHandler) handleStripeWebhook(w http.ResponseWriter, r *http
 	payload, err := io.ReadAll(r.Body)
 	if err != nil {
 		log.Printf("error reading webhook payload: %v", err)
-		utils.WriteError(w, "could not read webhook payload", http.StatusBadRequest, "bad_payload", nil)
+		utils.WriteError(w, r, http.StatusBadRequest, "could not read webhook payload", "bad_payload", nil)
 		return
 	}
 
 	evnt, err := webhook.ConstructEvent(payload, r.Header.Get("Stripe-Signature"), h.EndpointSecret)
 	if err != nil {
 		log.Printf("error constructing webhook event: %v", err)
-		utils.WriteError(w, "could not construct webhook event", http.StatusBadRequest, "bad_payload", nil)
+		utils.WriteError(w, r, http.StatusBadRequest, "could not construct webhook event", "bad_payload", nil)
 		return
 	}
 
@@ -121,7 +116,7 @@ func (h *SubscriptionHandler) handleStripeWebhook(w http.ResponseWriter, r *http
 	case "customer.subscription.deleted":
 	default:
 		log.Printf("unhandled webhook event type: %s", evnt.Type)
-		utils.WriteError(w, "unhandled webhook event type", http.StatusBadRequest, "bad_payload", nil)
+		utils.WriteError(w, r, http.StatusBadRequest, "unhandled webhook event type", "bad_payload", nil)
 	}
 
 }
@@ -135,7 +130,7 @@ func (h *SubscriptionHandler) handleSubscriptionCreated(w http.ResponseWriter, r
 	err := json.Unmarshal(evnt.Data.Raw, &subscription)
 	if err != nil {
 		log.Printf("error unmarshalling webhook event: %v", err)
-		utils.WriteError(w, "could not unmarshall webhook event", http.StatusBadRequest, "bad_payload", nil)
+		utils.WriteError(w, r, http.StatusBadRequest, "could not unmarshall webhook event", "bad_payload", nil)
 		return
 	}
 
@@ -146,7 +141,7 @@ func (h *SubscriptionHandler) handleSubscriptionCreated(w http.ResponseWriter, r
 	user, err := h.Database.FindUserByStripeCustomerID(r.Context(), customerId)
 	if err != nil {
 		log.Printf("error finding user by stripe customer id: %v", err)
-		utils.WriteError(w, "could not handle subscription creation", http.StatusInternalServerError, "internal_error", nil)
+		utils.WriteError(w, r, http.StatusInternalServerError, "could not handle subscription creation", "internal_error", nil)
 		return
 	}
 
@@ -162,7 +157,7 @@ func (h *SubscriptionHandler) handleSubscriptionCreated(w http.ResponseWriter, r
 	_, err = h.Database.CreateSubscription(r.Context(), subReq)
 	if err != nil {
 		log.Printf("error creating subscription in database: %v", err)
-		utils.WriteError(w, "could not handle subscription creation", http.StatusInternalServerError, "internal_error", nil)
+		utils.WriteError(w, r, http.StatusInternalServerError, "could not handle subscription creation", "internal_error", nil)
 		return
 	}
 }
