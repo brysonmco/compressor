@@ -1,6 +1,4 @@
 <script lang="ts">
-    import { login } from "$lib/api/auth";
-
     let showErrorModal = false;
     let errorModalMessage = '';
 
@@ -14,29 +12,6 @@
         email: '',
         password: '',
     };
-
-    async function handleSubmit(event: Event | SubmitEvent) {
-        event.preventDefault();
-        const res = await login(
-            formData.email,
-            formData.password,
-        );
-
-        const data = await res.json();
-
-        if (data.fieldErrors) {
-            formErrors = data.fieldErrors;
-        }
-
-        if (!data.success && data.message) {
-            showErrorModal = true;
-            errorModalMessage = data.message;
-        }
-
-        if (data.redirect) {
-            window.location.href = data.redirect;
-        }
-    }
 
     function validateField(field: string) {
         switch (field) {
@@ -64,7 +39,7 @@
 
 
 <div class="flex justify-center items-center h-screen">
-    <form on:submit|preventDefault={handleSubmit}
+    <form method="POST"
           class="flex flex-col gap-4 2xl:w-1/3 md:w-2/3 md:m-0 m-4 p-6 bg-white rounded-lg items-center">
         <span class="text-4xl font-semibold">Login</span>
 
