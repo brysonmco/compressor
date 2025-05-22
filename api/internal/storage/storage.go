@@ -51,17 +51,32 @@ func (s *Storage) GenerateUploadURLForUploads(
 	id int64,
 	fileType string,
 	expires time.Time,
-) (string, error) {
-	url, err := s.Client.PresignedPutObject(
-		ctx,
-		s.UploadsBucket,
-		fmt.Sprintf("%d.%v", id, fileType),
-		expires.Sub(time.Now()))
+	maxFileSize int64,
+) (string, map[string]string, error) {
+	policy := minio.NewPostPolicy()
+
+	err := policy.SetBucket(s.UploadsBucket)
 	if err != nil {
-		return "", err
+		return "", nil, err
+	}
+	err = policy.SetKey(fmt.Sprintf("%d.%s", id, fileType))
+	if err != nil {
+		return "", nil, err
+	}
+	err = policy.SetContentLengthRange(0, maxFileSize)
+	if err != nil {
+		return "", nil, err
+	}
+	err = policy.SetExpires(expires)
+	if err != nil {
+		return "", nil, err
 	}
 
-	return url.String(), nil
+	url, formData, err := s.Client.PresignedPostPolicy(ctx, policy)
+	if err != nil {
+		return "", nil, err
+	}
+	return url.String(), formData, nil
 }
 
 // GenerateUploadURLForDownloads generates a pre-signed URL for the VM to upload a compressed file.

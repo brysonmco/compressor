@@ -4,6 +4,7 @@ import (
 	"github.com/awesomebfm/compressor/internal/models"
 	"github.com/stripe/stripe-go/v82"
 	"github.com/stripe/stripe-go/v82/customer"
+	"github.com/stripe/stripe-go/v82/price"
 	"strconv"
 )
 
@@ -16,4 +17,13 @@ func CreateStripeCustomer(user *models.User) (*stripe.Customer, error) {
 		},
 	}
 	return customer.New(params)
+}
+
+func GetProductIdFromPrice(priceId string) (string, error) {
+	p, err := price.Get(priceId, nil)
+	if err != nil {
+		return "", err
+	}
+
+	return p.Product.ID, nil
 }

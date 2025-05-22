@@ -76,8 +76,8 @@ func (h *SubscriptionHandler) handleCreateCheckoutSession(w http.ResponseWriter,
 				Quantity: stripe.Int64(1),
 			},
 		},
-		SuccessURL: stripe.String("http://localhost:3000/success"),
-		CancelURL:  stripe.String("http://localhost:3000/pricing"),
+		SuccessURL: stripe.String("http://localhost:8080/dashboard"),
+		CancelURL:  stripe.String("http://localhost:8080/pricing"),
 	}
 	sess, err := session.New(params)
 	if err != nil {
@@ -145,10 +145,20 @@ func (h *SubscriptionHandler) handleSubscriptionCreated(w http.ResponseWriter, r
 		return
 	}
 
+	// Get the plan
+	productId := subscription.Items.Data[0].Price.Product.ID
+	plan, err := h.Database.FindPlanByStripeProductId(r.Context(), productId)
+	if err != nil {
+		log.Printf("error finding plan by product id %v: %v", productId, err)
+		utils.WriteError(w, r, http.StatusInternalServerError, "could not handle subscription creation", "internal_error", nil)
+		return
+	}
+
 	subReq := models.CreateSubscription{
 		UserId:               user.Id,
 		StripeSubscriptionId: subscriptionId,
 		StripePriceId:        priceId,
+		PlanId:               plan,
 		Status:               string(subscription.Status),
 		CurrentPeriodStart:   time.Unix(subscription.Items.Data[0].CurrentPeriodStart, 0),
 		CurrentPeriodEnd:     time.Unix(subscription.Items.Data[0].CurrentPeriodEnd, 0),

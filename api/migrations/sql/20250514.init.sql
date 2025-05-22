@@ -32,6 +32,7 @@ CREATE TABLE plans
     stripe_product_id    text UNIQUE,
     concurrent_jobs      integer NOT NULL, -- How many jobs they can run at the same time
     max_resolution       text    NOT NULL, -- width * height
+    max_file_size        bigint  NOT NULL, -- Max file size in bytes
     file_retention_hours integer NOT NULL, -- How long we keep the files for them
     watermark            bool    NOT NULL  -- Whether the plan has a watermark or not
 );
