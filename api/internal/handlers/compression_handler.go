@@ -2,12 +2,14 @@ package handlers
 
 import (
 	"encoding/json"
+	"errors"
 	"github.com/awesomebfm/compressor/internal/db"
 	"github.com/awesomebfm/compressor/internal/middleware"
 	"github.com/awesomebfm/compressor/internal/models"
 	"github.com/awesomebfm/compressor/internal/storage"
 	"github.com/awesomebfm/compressor/internal/utils"
 	"github.com/go-chi/chi/v5"
+	"github.com/jackc/pgx/v5"
 	"log"
 	"net/http"
 	"time"
@@ -38,11 +40,12 @@ func NewCompressionHandler(
 }
 
 type createCompressionJobRequest struct {
-	Container string `json:"container"`
+	FileName      string `json:"fileName"`
+	FileContainer string `json:"fileContainer"`
 }
 
 func (h *CompressionHandler) handleCreateCompressionJob(w http.ResponseWriter, r *http.Request) {
-	id := r.Context().Value("userID").(int64)
+	id := r.Context().Value("userId").(int64)
 
 	// Parse request body
 	var req createCompressionJobRequest
@@ -51,10 +54,33 @@ func (h *CompressionHandler) handleCreateCompressionJob(w http.ResponseWriter, r
 		return
 	}
 
+	// Get their subscription
+	var plan *models.Plan
+	subscription, err := h.Database.FindActiveSubscriptionByUserId(r.Context(), id)
+	if err != nil && !errors.Is(err, pgx.ErrNoRows) {
+		log.Printf("error fetching subscription: %v", err)
+		utils.WriteError(w, r, http.StatusInternalServerError, "error creating job", "internal_error", nil)
+		return
+	} else if errors.Is(err, pgx.ErrNoRows) {
+		plan, err = h.Database.FindPlanByName(r.Context(), "Free")
+		if err != nil {
+			log.Printf("error fetching plan: %v", err)
+			utils.WriteError(w, r, http.StatusInternalServerError, "error creating job", "internal_error", nil)
+			return
+		}
+	} else {
+		plan, err = h.Database.FindPlanById(r.Context(), subscription.PlanId)
+		if err != nil {
+			log.Printf("error fetching plan: %v", err)
+			utils.WriteError(w, r, http.StatusInternalServerError, "error creating job", "internal_error", nil)
+			return
+		}
+	}
+
 	// Ensure valid container
 	allowedContainers := []string{"mp4", "mkv", "mov", "avi", "webm", "flv", "ts", "mpg", "ogg", "wav"}
 	for i := 0; i < len(allowedContainers); i++ {
-		if req.Container == allowedContainers[i] {
+		if req.FileContainer == allowedContainers[i] {
 			break
 		}
 		if i == len(allowedContainers)-1 {
@@ -65,7 +91,8 @@ func (h *CompressionHandler) handleCreateCompressionJob(w http.ResponseWriter, r
 
 	// Create job
 	job, err := h.Database.CreateJob(r.Context(), &models.CreateJob{
-		UserId: id,
+		UserId:   id,
+		FileName: req.FileName,
 	})
 	if err != nil {
 		log.Printf("error creating job: %v", err)
@@ -74,7 +101,7 @@ func (h *CompressionHandler) handleCreateCompressionJob(w http.ResponseWriter, r
 	}
 
 	// Generate upload URL
-	uploadURL, formData, err := h.Storage.GenerateUploadURLForUploads(r.Context(), job.Id, "mp4", time.Now().Add(time.Hour), 104857600)
+	uploadURL, formData, err := h.Storage.GenerateUploadURLForUploads(r.Context(), job.Id, "mp4", time.Now().Add(time.Hour), plan.MaxFileSize)
 	if err != nil {
 		log.Printf("error generating upload URL: %v", err)
 		utils.WriteError(w, r, http.StatusInternalServerError, "error creating job", "internal_error", nil)
@@ -92,7 +119,7 @@ type uploadCompleteRequest struct {
 }
 
 func (h *CompressionHandler) handleUploadComplete(w http.ResponseWriter, r *http.Request) {
-	id := r.Context().Value("userID").(int64)
+	id := r.Context().Value("userId").(int64)
 
 	// Parse request body
 	var req uploadCompleteRequest

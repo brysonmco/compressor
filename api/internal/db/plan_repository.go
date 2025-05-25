@@ -3,11 +3,26 @@ package db
 import (
 	"context"
 	"fmt"
+	"github.com/awesomebfm/compressor/internal/models"
 )
 
 func (d *Database) FindPlanByStripeProductId(
 	ctx context.Context,
 	stripeProductId string,
-) (int64, error) {
-	return -1, fmt.Errorf("not implemented")
+) (*models.Plan, error) {
+	return &models.Plan{}, fmt.Errorf("not implemented")
+}
+
+func (d *Database) FindPlanById(
+	ctx context.Context,
+	id int64,
+) (*models.Plan, error) {
+	return &models.Plan{}, fmt.Errorf("not implemented")
+}
+
+func (d *Database) FindPlanByName(
+	ctx context.Context,
+	name string,
+) (*models.Plan, error) {
+	return &models.Plan{}, fmt.Errorf("not implemented")
 }

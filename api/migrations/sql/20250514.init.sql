@@ -25,16 +25,16 @@ CREATE TABLE sessions
 CREATE TABLE plans
 (
     id                   serial PRIMARY KEY,
-    name                 text    NOT NULL,
-    tokens               integer NOT NULL, -- How many tokens they get per month (-1 for unlimited)
-    price                integer NOT NULL, -- Price in cents
-    priority             text    NOT NULL, -- (standard or express)
+    name                 text UNIQUE NOT NULL,
+    tokens               integer     NOT NULL, -- How many tokens they get per month (-1 for unlimited)
+    price                integer     NOT NULL, -- Price in cents
+    priority             text        NOT NULL, -- (standard or express)
     stripe_product_id    text UNIQUE,
-    concurrent_jobs      integer NOT NULL, -- How many jobs they can run at the same time
-    max_resolution       text    NOT NULL, -- width * height
-    max_file_size        bigint  NOT NULL, -- Max file size in bytes
-    file_retention_hours integer NOT NULL, -- How long we keep the files for them
-    watermark            bool    NOT NULL  -- Whether the plan has a watermark or not
+    concurrent_jobs      integer     NOT NULL, -- How many jobs they can run at the same time
+    max_resolution       bigint      NOT NULL, -- width * height
+    max_file_size        bigint      NOT NULL, -- Max file size in bytes
+    file_retention_hours integer     NOT NULL, -- How long we keep the files for them
+    watermark            bool        NOT NULL  -- Whether the plan has a watermark or not
 );
 
 CREATE TABLE subscriptions

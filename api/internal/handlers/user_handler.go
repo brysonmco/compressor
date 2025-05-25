@@ -33,7 +33,7 @@ func NewUserHandler(
 // GET /users/profile
 func (h *UserHandler) handleGetProfile(w http.ResponseWriter, r *http.Request) {
 	// Grab their ID
-	id := r.Context().Value("userID").(int64)
+	id := r.Context().Value("userId").(int64)
 
 	// Grab user data
 	user, err := h.Database.FindUserByID(r.Context(), id)

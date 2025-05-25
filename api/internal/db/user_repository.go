@@ -102,7 +102,7 @@ func (d *Database) CreateUser(
 ) (*models.User, error) {
 	query := `INSERT INTO users (email, first_name, last_name, password_hash)
 		VALUES ($1, $2, $3, $4)
-		RETURNING id, email, first_name, last_name, password_hash, stripe_customer_id, email_verified, created_at, 
+		RETURNING id, email, first_name, last_name, password_hash, email_verified, created_at, 
 		    updated_at, last_login`
 
 	var user models.User
@@ -117,7 +117,6 @@ func (d *Database) CreateUser(
 		&user.FirstName,
 		&user.LastName,
 		&user.PasswordHash,
-		&user.StripeCustomerId,
 		&user.EmailVerified,
 		&user.CreatedAt,
 		&user.UpdatedAt,

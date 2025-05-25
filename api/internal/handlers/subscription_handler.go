@@ -47,7 +47,7 @@ type createCheckoutSessionRequest struct {
 
 func (h *SubscriptionHandler) handleCreateCheckoutSession(w http.ResponseWriter, r *http.Request) {
 	// Grab their ID
-	id := r.Context().Value("userID").(int64)
+	id := r.Context().Value("userId").(int64)
 
 	// Grab request data
 	var data createCheckoutSessionRequest
@@ -158,7 +158,7 @@ func (h *SubscriptionHandler) handleSubscriptionCreated(w http.ResponseWriter, r
 		UserId:               user.Id,
 		StripeSubscriptionId: subscriptionId,
 		StripePriceId:        priceId,
-		PlanId:               plan,
+		PlanId:               plan.Id,
 		Status:               string(subscription.Status),
 		CurrentPeriodStart:   time.Unix(subscription.Items.Data[0].CurrentPeriodStart, 0),
 		CurrentPeriodEnd:     time.Unix(subscription.Items.Data[0].CurrentPeriodEnd, 0),
