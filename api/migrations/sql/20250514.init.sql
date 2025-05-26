@@ -59,7 +59,7 @@ CREATE TABLE jobs
     updated_at                   timestamp DEFAULT now(),
     file_uploaded                bool      DEFAULT FALSE,
     file_name                    text,
-    status                       text,
+    status                       text DEFAULT 'pending', -- (pending, processing, completed, failed)
     input_codec                  text,
     input_container              text,
     input_resolution_horizontal  integer,
@@ -76,7 +76,6 @@ CREATE TABLE token_balances
 (
     user_id       serial    NOT NULL REFERENCES users (id),
     token_balance INTEGER   NOT NULL DEFAULT 0,
-    free_tokens   INTEGER   NOT NULL DEFAULT 100,
     period_start  timestamp NOT NULL,
     period_end    timestamp NOT NULL
 )

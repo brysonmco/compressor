@@ -2,14 +2,12 @@ package handlers
 
 import (
 	"encoding/json"
-	"errors"
 	"github.com/awesomebfm/compressor/internal/db"
 	"github.com/awesomebfm/compressor/internal/middleware"
 	"github.com/awesomebfm/compressor/internal/models"
 	"github.com/awesomebfm/compressor/internal/storage"
 	"github.com/awesomebfm/compressor/internal/utils"
 	"github.com/go-chi/chi/v5"
-	"github.com/jackc/pgx/v5"
 	"log"
 	"net/http"
 	"time"
@@ -54,8 +52,15 @@ func (h *CompressionHandler) handleCreateCompressionJob(w http.ResponseWriter, r
 		return
 	}
 
+	// Validate request
+	if req.FileName == "" || req.FileContainer == "" {
+		utils.WriteError(w, r, http.StatusBadRequest, "missing required fields", "missing_fields", nil)
+		return
+	}
+
 	// Get their subscription
-	var plan *models.Plan
+	// TODO: Implement subscription handling
+	/*var plan *models.Plan
 	subscription, err := h.Database.FindActiveSubscriptionByUserId(r.Context(), id)
 	if err != nil && !errors.Is(err, pgx.ErrNoRows) {
 		log.Printf("error fetching subscription: %v", err)
@@ -75,7 +80,7 @@ func (h *CompressionHandler) handleCreateCompressionJob(w http.ResponseWriter, r
 			utils.WriteError(w, r, http.StatusInternalServerError, "error creating job", "internal_error", nil)
 			return
 		}
-	}
+	}*/
 
 	// Ensure valid container
 	allowedContainers := []string{"mp4", "mkv", "mov", "avi", "webm", "flv", "ts", "mpg", "ogg", "wav"}
@@ -101,7 +106,13 @@ func (h *CompressionHandler) handleCreateCompressionJob(w http.ResponseWriter, r
 	}
 
 	// Generate upload URL
-	uploadURL, formData, err := h.Storage.GenerateUploadURLForUploads(r.Context(), job.Id, "mp4", time.Now().Add(time.Hour), plan.MaxFileSize)
+	uploadURL, formData, err := h.Storage.GenerateUploadURLForUploads(
+		r.Context(),
+		job.Id,
+		req.FileContainer,
+		time.Now().Add(time.Hour),
+		10240,
+	)
 	if err != nil {
 		log.Printf("error generating upload URL: %v", err)
 		utils.WriteError(w, r, http.StatusInternalServerError, "error creating job", "internal_error", nil)

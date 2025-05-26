@@ -8,6 +8,7 @@ import (
 	"github.com/awesomebfm/compressor/internal/utils"
 	"github.com/go-chi/chi/v5"
 	"github.com/stripe/stripe-go/v82"
+	billing_session "github.com/stripe/stripe-go/v82/billingportal/session"
 	"github.com/stripe/stripe-go/v82/checkout/session"
 	"github.com/stripe/stripe-go/v82/webhook"
 	"io"
@@ -35,10 +36,38 @@ func NewSubscriptionHandler(
 
 	r := chi.NewRouter()
 	r.With(authMiddleware.Protected).Post("/checkout", h.handleCreateCheckoutSession)
+	r.With(authMiddleware.Protected).Post("/portal", h.handleCreatePortalSession)
 	r.With(authMiddleware.Protected).Post("/cancel", h.handleCancelSubscription)
 	r.Post("/webhook", h.handleStripeWebhook)
 
 	return r
+}
+
+func (h *SubscriptionHandler) handleCreatePortalSession(w http.ResponseWriter, r *http.Request) {
+	// Grab their ID
+	id := r.Context().Value("userId").(int64)
+
+	user, err := h.Database.FindUserByID(r.Context(), id)
+	if err != nil {
+		log.Printf("error finding user: %v", err)
+		utils.WriteError(w, r, http.StatusInternalServerError, "error creating portal session", "internal_error", nil)
+		return
+	}
+
+	params := &stripe.BillingPortalSessionParams{
+		Customer:  stripe.String(user.StripeCustomerId),
+		ReturnURL: stripe.String("http://localhost:5173/account"),
+	}
+	sess, err := billing_session.New(params)
+	if err != nil {
+		log.Printf("error creating billing portal session: %v", err)
+		utils.WriteError(w, r, http.StatusInternalServerError, "error creating portal session", "internal_error", nil)
+		return
+	}
+
+	utils.WriteSuccess(w, r, http.StatusOK, "portal session created", map[string]string{
+		"portalUrl": sess.URL,
+	})
 }
 
 type createCheckoutSessionRequest struct {

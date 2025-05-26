@@ -57,9 +57,7 @@ func (d *Database) CreateJob(
 ) (*models.Job, error) {
 	query := `INSERT INTO jobs (user_id, file_name, input_container, input_size)
     		VALUES ($1, $2, $3, $4)
-    		RETURNING id, user_id, created_at, updated_at, file_uploaded, file_name, status, input_codec, 
-    		    input_container, input_resolution_horizontal, input_resolution_vertical, input_size, output_codec,
-    		    output_container, output_resolution_horizontal, output_resolution_vertical, output_size`
+    		RETURNING id, user_id, created_at, updated_at, file_uploaded, file_name, status, input_container, input_size`
 
 	var job models.Job
 	if err := d.Pool.QueryRow(ctx, query,
@@ -75,16 +73,8 @@ func (d *Database) CreateJob(
 		&job.FileUploaded,
 		&job.FileName,
 		&job.Status,
-		&job.InputCodec,
 		&job.InputContainer,
-		&job.InputResolutionHorizontal,
-		&job.InputResolutionVertical,
 		&job.InputSize,
-		&job.OutputCodec,
-		&job.OutputContainer,
-		&job.OutputResolutionHorizontal,
-		&job.OutputResolutionVertical,
-		&job.OutputSize,
 	); err != nil {
 		return nil, err
 	}

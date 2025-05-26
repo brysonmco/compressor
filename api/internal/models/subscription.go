@@ -24,3 +24,10 @@ type CreateSubscription struct {
 	CurrentPeriodStart   time.Time `json:"currentPeriodStart"`
 	CurrentPeriodEnd     time.Time `json:"currentPeriodEnd"`
 }
+
+type TokenBalance struct {
+	UserId       int64     `json:"userId"`
+	TokenBalance int       `json:"tokenBalance"`
+	PeriodStart  time.Time `json:"periodStart"`
+	PeriodEnd    time.Time `json:"periodEnd"`
+}

@@ -1,10 +1,12 @@
 <script lang="ts">
     let fileInput: HTMLInputElement;
+    let form: HTMLFormElement;
     let dragActive = false;
 
     let file: File | null = null;
 
     let inputMetadata = {
+        name: '',
         container: '',
         codec: '',
         resolution: '',
@@ -16,7 +18,10 @@
         if (!selected || selected.length === 0) return;
         file = selected[0];
 
+        form.submit();
+
         inputMetadata = {
+            name: file.name,
             container: 'mp4',
             codec: 'h.264',
             resolution: '1920x1080',
@@ -37,16 +42,19 @@
     }
 </script>
 
-<input type="file" class="hidden" accept="video/*" bind:this={fileInput}>
-{#if !file}
+<form method="POST" enctype="multipart/form-data" class="hidden" action="?/upload" bind:this={form}>
+    <input type="file" class="hidden" name="file" accept="video/*" bind:this={fileInput} on:change={() => handleFileInput(fileInput.files)}>
+</form>
+
+{#if file}
     <div class={`flex flex-col min-h-96 border-2 hover:border-red-500 hover:bg-red-50
         rounded-lg p-3 transition-colors cursor-pointer flex-1 ${dragActive ? 'border-blue-500 bg-blue-50' : 'border-slate-200 bg-slate-50'}`}
          on:click={removeFile}>
         <div class="flex flex-row gap-2 mb-2">
             <i class="bx bx-file bx-lg"></i>
             <div class="flex flex-col flex-grow">
-                <span class="text-xl font-medium">meeting.mp4</span>
-                <span>92.2 MB • 02:03</span>
+                <span class="text-xl font-medium">{ inputMetadata.name }</span>
+                <span>{ inputMetadata.sizeMB } MB • 02:03</span>
             </div>
         </div>
         <span><span class="font-semibold">Resolution:</span> 1920x1080</span>
