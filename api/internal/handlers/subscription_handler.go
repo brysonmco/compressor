@@ -143,6 +143,7 @@ func (h *SubscriptionHandler) handleStripeWebhook(w http.ResponseWriter, r *http
 		break
 	case "customer.subscription.updated":
 	case "customer.subscription.deleted":
+	case "invoice.paid":
 	default:
 		log.Printf("unhandled webhook event type: %s", evnt.Type)
 		utils.WriteError(w, r, http.StatusBadRequest, "unhandled webhook event type", "bad_payload", nil)

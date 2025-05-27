@@ -42,6 +42,7 @@ func NewAuthHandler(
 	return r
 }
 
+// POST /v1/auth/login
 type loginRequest struct {
 	Email    string `json:"email"`
 	Password string `json:"password"`
@@ -183,6 +184,7 @@ func (h *AuthHandler) handleLogin(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
+// POST /v1/auth/signup
 type signUpRequest struct {
 	Email           string `json:"email"`
 	FirstName       string `json:"firstName"`
@@ -355,6 +357,7 @@ func (h *AuthHandler) handleSignUp(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
+// POST /v1/auth/refresh
 func (h *AuthHandler) handleRefresh(w http.ResponseWriter, r *http.Request) {
 	token, err := r.Cookie("refreshToken")
 	if err != nil || token.Value == "" {
@@ -406,6 +409,7 @@ func (h *AuthHandler) handleRefresh(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
+// POST /v1/auth/logout
 func (h *AuthHandler) handleLogout(w http.ResponseWriter, r *http.Request) {
 	id, err := h.Auth.ValidateAccessToken(strings.TrimPrefix(r.Header.Get("Authorization"), "Bearer "))
 	if err != nil && errors.Is(err, errors.New("expired_token")) {
@@ -435,7 +439,55 @@ func (h *AuthHandler) handleVerifyEmail(w http.ResponseWriter, r *http.Request) 
 	return
 }
 
+// POST /v1/auth/update-password
+type updatePasswordRequest struct {
+	CurrentPassword string `json:"currentPassword"`
+	NewPassword     string `json:"newPassword"`
+	ConfirmPassword string `json:"confirmPassword"`
+}
+
 func (h *AuthHandler) handleUpdatePassword(w http.ResponseWriter, r *http.Request) {
-	utils.WriteError(w, r, http.StatusNotImplemented, "not implemented", "not_implemented", nil)
+	id := r.Context().Value("userId").(int64)
+
+	var data updatePasswordRequest
+	if err := json.NewDecoder(r.Body).Decode(&data); err != nil {
+		utils.WriteError(w, r, http.StatusBadRequest, "error parsing JSON", "invalid_json", nil)
+		return
+	}
+	defer r.Body.Close()
+
+	details := map[string]interface{}{}
+
+	if data.CurrentPassword == "" {
+		details["currentPassword"] = "missing required field"
+	}
+	if data.NewPassword == "" {
+		details["newPassword"] = "missing required field"
+	}
+	if data.ConfirmPassword == "" {
+		details["confirmPassword"] = "missing required field"
+	}
+
+	if len(details) > 0 {
+		utils.WriteError(w, r, http.StatusBadRequest, "missing required fields", "missing_fields", details)
+		return
+	}
+
+	if data.NewPassword != data.ConfirmPassword {
+		utils.WriteError(w, r, http.StatusBadRequest, "passwords do not match", "password_mismatch", nil)
+		return
+	}
+
+	user, err := h.Database.FindUserByID(r.Context(), id)
+	if err != nil {
+		log.Printf("error finding user by ID: %v", err)
+		utils.WriteError(w, r, http.StatusInternalServerError, "error updating password", "internal_error", nil)
+	}
+
+	if !h.Auth.CheckPasswordHash(data.CurrentPassword, user.PasswordHash) {
+		utils.WriteError(w, r, http.StatusUnauthorized, "invalid current password", "invalid_password", nil)
+		return
+	}
+
 	return
 }
