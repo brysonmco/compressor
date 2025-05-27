@@ -27,7 +27,6 @@ CREATE TABLE plans
     id                   serial PRIMARY KEY,
     name                 text UNIQUE NOT NULL,
     tokens               integer     NOT NULL, -- How many tokens they get per month (-1 for unlimited)
-    price                integer     NOT NULL, -- Price in cents
     priority             text        NOT NULL, -- (standard or express)
     stripe_product_id    text UNIQUE,
     concurrent_jobs      integer     NOT NULL, -- How many jobs they can run at the same time

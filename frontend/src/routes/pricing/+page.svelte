@@ -1,6 +1,7 @@
 <script>
     import Header from "$lib/components/Header.svelte";
     let authenticated = false;
+    let showModal = true;
 </script>
 
 <Header authenticated={authenticated}></Header>
@@ -168,3 +169,34 @@
         </div>
     </div>
 </div>
+
+{#if showModal}
+    <div class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/30">
+        <div class="flex flex-col bg-white rounded-xl shadow-lg p-6 text-center gap-4 w-full mx-6 sm:w-3/4 md:w-1/2 lg:w-1/3">
+            <!-- Header -->
+            <h2 class="text-xl font-semibold text-gray-800">Plan Downgrade Information</h2>
+
+            <!-- Body -->
+            <p class="text-gray-600">
+                If you downgrade your plan, the change will take effect at the end of your current billing period.
+                You'll retain access to all features of your current plan until then. After that, your subscription
+                will automatically switch to the downgraded plan, and you'll be billed accordingly.
+            </p>
+
+            <!-- Buttons -->
+            <div class="flex justify-center gap-4 mt-4">
+                <button
+                        class="px-4 py-2 rounded-lg bg-slate-100 text-gray-700 hover:bg-slate-200 transition hover:cursor-pointer"
+                        on:click={() => showModal = false}
+                >
+                Cancel
+                </button>
+                <button
+                        class="px-4 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700 transition hover:cursor-pointer"
+                >
+                Confirm Downgrade
+                </button>
+            </div>
+        </div>
+    </div>
+{/if}

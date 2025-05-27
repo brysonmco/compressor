@@ -35,6 +35,7 @@ func NewSubscriptionHandler(
 	}
 
 	r := chi.NewRouter()
+	r.Get("/plans", h.handleGetPlans)
 	r.With(authMiddleware.Protected).Post("/checkout", h.handleCreateCheckoutSession)
 	r.With(authMiddleware.Protected).Post("/portal", h.handleCreatePortalSession)
 	r.With(authMiddleware.Protected).Post("/cancel", h.handleCancelSubscription)
@@ -43,33 +44,21 @@ func NewSubscriptionHandler(
 	return r
 }
 
-func (h *SubscriptionHandler) handleCreatePortalSession(w http.ResponseWriter, r *http.Request) {
-	// Grab their ID
-	id := r.Context().Value("userId").(int64)
-
-	user, err := h.Database.FindUserByID(r.Context(), id)
-	if err != nil {
-		log.Printf("error finding user: %v", err)
-		utils.WriteError(w, r, http.StatusInternalServerError, "error creating portal session", "internal_error", nil)
-		return
-	}
-
-	params := &stripe.BillingPortalSessionParams{
-		Customer:  stripe.String(user.StripeCustomerId),
-		ReturnURL: stripe.String("http://localhost:5173/account"),
-	}
-	sess, err := billing_session.New(params)
-	if err != nil {
-		log.Printf("error creating billing portal session: %v", err)
-		utils.WriteError(w, r, http.StatusInternalServerError, "error creating portal session", "internal_error", nil)
-		return
-	}
-
-	utils.WriteSuccess(w, r, http.StatusOK, "portal session created", map[string]string{
-		"portalUrl": sess.URL,
-	})
+// GET /v1/subscriptions/plans
+type planResponse struct {
+	Id int64 `json:"id"`
 }
 
+func (h *SubscriptionHandler) handleGetPlans(w http.ResponseWriter, r *http.Request) {
+	_, err := h.Database.FindAllPlans(r.Context())
+	if err != nil {
+		log.Printf("error finding plans: %v", err)
+		utils.WriteError(w, r, http.StatusInternalServerError, "error fetching plans", "internal_error", nil)
+		return
+	}
+}
+
+// POST /v1/subscriptions/checkout
 type createCheckoutSessionRequest struct {
 	PriceId string `json:"priceId"`
 }
@@ -117,6 +106,33 @@ func (h *SubscriptionHandler) handleCreateCheckoutSession(w http.ResponseWriter,
 	// Return checkout url
 	utils.WriteSuccess(w, r, http.StatusOK, "checkout session created", map[string]string{
 		"checkoutUrl": sess.URL,
+	})
+}
+
+func (h *SubscriptionHandler) handleCreatePortalSession(w http.ResponseWriter, r *http.Request) {
+	// Grab their ID
+	id := r.Context().Value("userId").(int64)
+
+	user, err := h.Database.FindUserByID(r.Context(), id)
+	if err != nil {
+		log.Printf("error finding user: %v", err)
+		utils.WriteError(w, r, http.StatusInternalServerError, "error creating portal session", "internal_error", nil)
+		return
+	}
+
+	params := &stripe.BillingPortalSessionParams{
+		Customer:  stripe.String(user.StripeCustomerId),
+		ReturnURL: stripe.String("http://localhost:5173/account"),
+	}
+	sess, err := billing_session.New(params)
+	if err != nil {
+		log.Printf("error creating billing portal session: %v", err)
+		utils.WriteError(w, r, http.StatusInternalServerError, "error creating portal session", "internal_error", nil)
+		return
+	}
+
+	utils.WriteSuccess(w, r, http.StatusOK, "portal session created", map[string]string{
+		"portalUrl": sess.URL,
 	})
 }
 

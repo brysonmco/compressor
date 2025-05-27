@@ -1,5 +1,5 @@
 import { json } from "@sveltejs/kit";
-import {apiBaseUrl} from "$lib/server/config";
+import { apiBaseUrl } from "$lib/server/config";
 
 export async function refresh(
     refreshToken: string
@@ -143,6 +143,36 @@ export async function signup(
         return json({
             success: false,
             message: "Error occurred while registering. Please try again later."
+        });
+    }
+}
+
+export async function isAuthenticated(
+    accessToken: string
+): Promise<Response> {
+    try {
+        const response = await fetch(apiBaseUrl + "/users/profile", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "Authorization": `Bearer ${accessToken}`
+            }
+        });
+
+        if (!response.ok) {
+            return json({
+                success: false,
+                message: "Authentication failed. Please log in again."
+            });
+        }
+
+        return json({
+            success: true,
+        });
+    } catch (e) {
+        return json({
+            success: false,
+            message: "Error occurred while checking authentication. Please try again later."
         });
     }
 }

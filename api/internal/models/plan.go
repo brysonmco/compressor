@@ -8,6 +8,7 @@ type Plan struct {
 	Tokens          int           `json:"tokens"`
 	Priority        string        `json:"priority"`
 	StripeProductId string        `json:"stripeProductId"`
+	Price           int           `json:"price"`
 	ConcurrentJobs  int           `json:"concurrentJobs"`
 	MaxResolution   int64         `json:"maxResolution"`
 	MaxFileSize     int64         `json:"maxFileSize"`
