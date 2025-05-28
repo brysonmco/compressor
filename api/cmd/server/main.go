@@ -79,6 +79,9 @@ func main() {
 		database,
 		authMiddleware,
 		strge))
+	r.Mount("/v1/users", handlers.NewUserHandler(
+		database,
+		authMiddleware))
 
 	log.Fatal(http.ListenAndServe(os.Getenv("LISTEN_ADDR"), r))
 }
