@@ -1,9 +1,7 @@
 <script lang="ts">
     import AccountSelector from "$lib/components/AccountSelector.svelte";
 
-    let { authenticated }: { authenticated: boolean } = $props();
-
-    const tokens = 1000;
+    let { authenticated, tokens }: { authenticated: boolean, tokens: number } = $props();
 </script>
 
 <header class="flex flex-row justify-center">

@@ -5,4 +5,4 @@
     let { data }: PageProps = $props();
 </script>
 
-<Header authenticated={data.authenticated}></Header>
+<Header authenticated={data.authenticated} tokens={data.user.tokens}></Header>

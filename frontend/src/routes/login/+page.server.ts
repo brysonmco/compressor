@@ -1,6 +1,17 @@
 import type { Actions } from './$types';
-import {login} from "$lib/server/auth";
+import {isAuthenticated, login} from "$lib/server/auth";
 import {json, redirect} from "@sveltejs/kit";
+import type {PageServerLoad} from "../../../.svelte-kit/types/src/routes/pricing/$types";
+
+export const load: PageServerLoad = async ({cookies}) => {
+    // Check if the user is authenticated
+    const authenticated = await isAuthenticated(cookies);
+
+    if (authenticated) {
+        // If authenticated, redirect to the home page
+        return redirect(303, '/dashboard');
+    }
+};
 
 export const actions = {
     default: async ({ cookies, request }) => {
