@@ -7,7 +7,7 @@
     let desiredPlan = $state<string | null>(null);
 </script>
 
-<Header authenticated={data.authenticated} tokens={data.user.tokens}></Header>
+<Header authenticated={data.authenticated} tokens={data.user?.tokens ?? -1}></Header>
 
 <div class="flex flex-col items-center h-full mt-8">
     <span class="text-3xl font-medium leading-normal">Pricing</span>

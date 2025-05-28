@@ -16,7 +16,7 @@ npm run dev
 compose up --build
 ```
 5. Remember to initialize the database with the latest init from `./backend/migrations/sql`
-6. That should be it!
+6. That is it for now!
 
 ## Feature Tracker
 There is still way too much to do for one of these
