@@ -1,5 +1,4 @@
 <script lang="ts">
-    import {signup} from "$lib/api/auth";
 
     let showErrorModal = false;
     let errorModalMessage = '';
@@ -22,7 +21,7 @@
     };
 
     async function handleSubmit(event: Event | SubmitEvent) {
-        event.preventDefault();
+        /*event.preventDefault();
         const res = await signup(
             formData.email,
             formData.firstName,
@@ -44,7 +43,7 @@
 
         if (data.redirect) {
             window.location.href = data.redirect;
-        }
+        }*/
     }
 
     function validateField(field: string) {

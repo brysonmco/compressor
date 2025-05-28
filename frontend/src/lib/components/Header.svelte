@@ -1,5 +1,9 @@
 <script lang="ts">
+    import AccountSelector from "$lib/components/AccountSelector.svelte";
+
     let { authenticated }: { authenticated: boolean } = $props();
+
+    const tokens = 1000;
 </script>
 
 <header class="flex flex-row justify-center">
@@ -16,7 +20,7 @@
         </nav>
 
         {#if authenticated}
-            <span>TODO</span>
+            <AccountSelector tokens={tokens}></AccountSelector>
         {:else}
             <a href="/signup" class="bg-brand px-6 py-2 rounded-lg text-bg font-medium text-xl hover:bg-brand-dark">Sign
                 Up</a>

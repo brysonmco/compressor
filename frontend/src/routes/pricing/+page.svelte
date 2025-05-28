@@ -1,10 +1,13 @@
-<script>
+<script lang="ts">
     import Header from "$lib/components/Header.svelte";
-    let authenticated = false;
-    let showModal = true;
+    import type {PageProps} from "./$types";
+
+    let {data}: PageProps = $props();
+    let showModal = $state(false);
+    let desiredPlan = $state<string | null>(null);
 </script>
 
-<Header authenticated={authenticated}></Header>
+<Header authenticated={data.authenticated}></Header>
 
 <div class="flex flex-col items-center h-full mt-8">
     <span class="text-3xl font-medium leading-normal">Pricing</span>
@@ -14,16 +17,30 @@
         <div class="flex flex-col flex-grow bg-white shadow-md rounded-2xl p-6 gap-4 w-full mx-auto">
             <div class="text-center">
                 <h2 class="text-2xl font-bold text-gray-800">Free</h2>
-                <p class="text-4xl font-extrabold text-purple-600 mt-1">$0<span class="text-base font-medium text-gray-500">/forever</span></p>
+                <p class="text-4xl font-extrabold text-purple-600 mt-1">$0<span
+                        class="text-base font-medium text-gray-500">/forever</span></p>
                 <p class="text-lg font-medium text-gray-600 mt-1">Explore Compressor</p>
             </div>
 
-            <a href="/account"
-               class="w-full text-center bg-purple-600 rounded-lg text-white py-2 text-lg font-semibold hover:bg-purple-700 transition">
-                Sign Up
-            </a>
+            {#if !data.authenticated}
+                <a href="/signup"
+                   class="w-full text-center bg-purple-600 rounded-lg text-white py-2 text-lg font-semibold hover:bg-purple-700 transition">
+                    Sign Up
+                </a>
+            {:else if data.user.plan === 'free'}
+                <a href="/account"
+                   class="w-full text-center bg-slate-100 rounded-lg text-gray-600 py-2 text-lg font-semibold hover:bg-slate-200 transition">
+                    Current Plan
+                </a>
+            {:else}
+                <button onclick={() => {showModal = true; desiredPlan = 'free'}}
+                        class="w-full text-center bg-purple-600 rounded-lg text-white py-2 text-lg font-semibold hover:bg-purple-700 hover:cursor-pointer transition">
+                    Cancel Subscription
+                </button>
+            {/if}
 
-            <hr class="border-t border-slate-300 my-2" />
+
+            <hr class="border-t border-slate-300 my-2"/>
 
             <ul class="flex flex-col gap-2 text-gray-700 text-base font-medium">
                 <li class="flex items-center">
@@ -56,16 +73,38 @@
         <div class="flex flex-col flex-grow bg-white shadow-md rounded-2xl p-6 gap-4 w-full mx-auto">
             <div class="text-center">
                 <h2 class="text-2xl font-bold text-gray-800">Basic</h2>
-                <p class="text-4xl font-extrabold text-purple-600 mt-1">$4.99<span class="text-base font-medium text-gray-500">/month</span></p>
+                <p class="text-4xl font-extrabold text-purple-600 mt-1">$4.99<span
+                        class="text-base font-medium text-gray-500">/month</span></p>
                 <p class="text-lg font-medium text-gray-600 mt-1">Essential features</p>
             </div>
 
-            <a href="/account"
-               class="w-full text-center bg-purple-600 rounded-lg text-white py-2 text-lg font-semibold hover:bg-purple-700 transition">
-                Subscribe
-            </a>
+            {#if !data.authenticated}
+                <a href="/signup"
+                   class="w-full text-center bg-purple-600 rounded-lg text-white py-2 text-lg font-semibold hover:bg-purple-700 transition">
+                    Sign Up
+                </a>
+            {:else if data.user.plan === 'basic'}
+                <a href="/account"
+                   class="w-full text-center bg-slate-100 rounded-lg text-gray-600 py-2 text-lg font-semibold hover:bg-slate-200 transition">
+                    Current Plan
+                </a>
+            {:else if data.user.plan === 'pro' || data.user.plan === 'ultimate'}
+                <button onclick={() => {showModal = true; desiredPlan = 'basic'}}
+                        class="w-full text-center bg-purple-600 rounded-lg text-white py-2 text-lg font-semibold hover:bg-purple-700 hover:cursor-pointer transition">
+                    Subscribe
+                </button>
+            {:else}
+                <form method="POST" action="?/subscribe">
+                    <input type="hidden" name="plan" value="basic">
+                    <button
+                            type="submit"
+                            class="w-full text-center bg-purple-600 rounded-lg text-white py-2 text-lg font-semibold hover:bg-purple-700 hover:cursor-pointer transition">
+                        Subscribe
+                    </button>
+                </form>
+            {/if}
 
-            <hr class="border-t border-slate-300 my-2" />
+            <hr class="border-t border-slate-300 my-2"/>
 
             <ul class="flex flex-col gap-2 text-gray-700 text-base font-medium">
                 <li class="flex items-center">
@@ -94,16 +133,38 @@
         <div class="flex flex-col flex-grow bg-white shadow-md rounded-2xl p-6 gap-4 w-full mx-auto">
             <div class="text-center">
                 <h2 class="text-2xl font-bold text-gray-800">Pro</h2>
-                <p class="text-4xl font-extrabold text-purple-600 mt-1">$9.99<span class="text-base font-medium text-gray-500">/month</span></p>
+                <p class="text-4xl font-extrabold text-purple-600 mt-1">$9.99<span
+                        class="text-base font-medium text-gray-500">/month</span></p>
                 <p class="text-lg font-medium text-gray-600 mt-1">Creators and media experts</p>
             </div>
 
-            <a href="/account"
-               class="w-full text-center bg-purple-600 rounded-lg text-white py-2 text-lg font-semibold hover:bg-purple-700 transition">
-                Subscribe
-            </a>
+            {#if !data.authenticated}
+                <a href="/signup"
+                   class="w-full text-center bg-purple-600 rounded-lg text-white py-2 text-lg font-semibold hover:bg-purple-700 transition">
+                    Sign Up
+                </a>
+            {:else if data.user.plan === 'pro'}
+                <a href="/account"
+                   class="w-full text-center bg-slate-100 rounded-lg text-gray-600 py-2 text-lg font-semibold hover:bg-slate-200 transition">
+                    Current Plan
+                </a>
+            {:else if data.user.plan === 'ultimate'}
+                <button onclick={() => {showModal = true; desiredPlan = 'basic'}}
+                        class="w-full text-center bg-purple-600 rounded-lg text-white py-2 text-lg font-semibold hover:bg-purple-700 hover:cursor-pointer transition">
+                    Subscribe
+                </button>
+            {:else}
+                <form method="POST" action="?/subscribe">
+                    <input type="hidden" name="plan" value="pro">
+                    <button
+                            type="submit"
+                            class="w-full text-center bg-purple-600 rounded-lg text-white py-2 text-lg font-semibold hover:bg-purple-700 hover:cursor-pointer transition">
+                        Subscribe
+                    </button>
+                </form>
+            {/if}
 
-            <hr class="border-t border-slate-300 my-2" />
+            <hr class="border-t border-slate-300 my-2"/>
 
             <ul class="flex flex-col gap-2 text-gray-700 text-base font-medium">
                 <li class="flex items-center">
@@ -132,16 +193,33 @@
         <div class="flex flex-col flex-grow bg-white shadow-md rounded-2xl p-6 gap-4 w-full mx-auto">
             <div class="text-center">
                 <h2 class="text-2xl font-bold text-gray-800">Ultimate</h2>
-                <p class="text-4xl font-extrabold text-purple-600 mt-1">$19.99<span class="text-base font-medium text-gray-500">/month</span></p>
+                <p class="text-4xl font-extrabold text-purple-600 mt-1">$19.99<span
+                        class="text-base font-medium text-gray-500">/month</span></p>
                 <p class="text-lg font-medium text-gray-600 mt-1">Teams handling large workloads</p>
             </div>
 
-            <a href="/account"
-               class="w-full text-center bg-purple-600 rounded-lg text-white py-2 text-lg font-semibold hover:bg-purple-700 transition">
-                Subscribe
-            </a>
+            {#if !data.authenticated}
+                <a href="/signup"
+                   class="w-full text-center bg-purple-600 rounded-lg text-white py-2 text-lg font-semibold hover:bg-purple-700 transition">
+                    Sign Up
+                </a>
+            {:else if data.user.plan === 'ultimate'}
+                <a href="/account"
+                   class="w-full text-center bg-slate-100 rounded-lg text-gray-600 py-2 text-lg font-semibold hover:bg-slate-200 transition">
+                    Current Plan
+                </a>
+            {:else}
+                <form method="POST" action="?/subscribe">
+                    <input type="hidden" name="plan" value="ultimate">
+                    <button
+                            type="submit"
+                            class="w-full text-center bg-purple-600 rounded-lg text-white py-2 text-lg font-semibold hover:bg-purple-700 hover:cursor-pointer transition">
+                        Subscribe
+                    </button>
+                </form>
+            {/if}
 
-            <hr class="border-t border-slate-300 my-2" />
+            <hr class="border-t border-slate-300 my-2"/>
 
             <ul class="flex flex-col gap-2 text-gray-700 text-base font-medium">
                 <li class="flex items-center">
@@ -187,15 +265,19 @@
             <div class="flex justify-center gap-4 mt-4">
                 <button
                         class="px-4 py-2 rounded-lg bg-slate-100 text-gray-700 hover:bg-slate-200 transition hover:cursor-pointer"
-                        on:click={() => showModal = false}
+                        onclick={() => showModal = false}
                 >
-                Cancel
+                    Cancel
                 </button>
-                <button
-                        class="px-4 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700 transition hover:cursor-pointer"
-                >
-                Confirm Downgrade
-                </button>
+                <form method="POST" action="?/subscribe">
+                    <input type="hidden" name="plan" value={desiredPlan}>
+                    <button
+                            type="submit"
+                            class="px-4 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700 transition hover:cursor-pointer"
+                    >
+                        Confirm Downgrade
+                    </button>
+                </form>
             </div>
         </div>
     </div>
