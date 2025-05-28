@@ -14,9 +14,7 @@ export const load: PageServerLoad = async ({cookies}) => {
     }
 
     return {
-        authenticated: true,
-        user: {
-            plan: 'ultimate',
-        },
+        authenticated: authenticated,
+        user: profile,
     };
 };

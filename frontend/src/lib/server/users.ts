@@ -14,9 +14,12 @@ export async function getProfile(
         });
 
         const data = await response.json();
+
+        return json({});
     } catch (err) {
-
+        return json({
+            success: false,
+            message: "Could not fetch user profile. Please try again later."
+        });
     }
-
-    return json({});
 }
