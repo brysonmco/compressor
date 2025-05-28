@@ -2,7 +2,7 @@ import { type Handle, redirect } from "@sveltejs/kit";
 import { isAuthenticated } from "$lib/server/auth";
 
 export const handle = (async ({ event, resolve }) => {
-    if (!shouldProtectRoute(event.url.pathname)) {
+    if (!shouldProtectRoute(event.route.id!)) {
         return resolve(event);
     }
 
