@@ -1,5 +1,6 @@
-import { json } from "@sveltejs/kit";
+import {type Cookies, json} from "@sveltejs/kit";
 import { apiBaseUrl } from "$lib/server/config";
+import {getProfile} from "$lib/server/users";
 
 export async function refresh(
     refreshToken: string
@@ -147,32 +148,51 @@ export async function signup(
     }
 }
 
-export async function isAuthenticated(
-    accessToken: string
-): Promise<Response> {
-    try {
-        const response = await fetch(apiBaseUrl + "/users/profile", {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-                "Authorization": `Bearer ${accessToken}`
-            }
-        });
+export async function isAuthenticated(cookies: Cookies): Promise<boolean> {
+    let accessToken = cookies.get('accessToken');
+    let refreshToken = cookies.get('refreshToken');
 
-        if (!response.ok) {
-            return json({
-                success: false,
-                message: "Authentication failed. Please log in again."
-            });
+    if (!accessToken) {
+        if (!refreshToken) {
+            cookies.delete('accessToken', {path: '/'});
+            cookies.delete('refreshToken', {path: '/'});
+            return false;
         }
 
-        return json({
-            success: true,
+        const refreshResponse = await refresh(refreshToken);
+        const refreshData = await refreshResponse.json();
+
+        if (!refreshData.success || !refreshData.accessToken) {
+            cookies.delete('accessToken', {path: '/'});
+            cookies.delete('refreshToken', {path: '/'});
+            return false;
+        }
+
+        cookies.set('accessToken', refreshData.accessToken, {
+            httpOnly: true,
+            path: '/',
+            sameSite: 'strict',
+            maxAge: 60 * 60
         });
-    } catch (e) {
-        return json({
-            success: false,
-            message: "Error occurred while checking authentication. Please try again later."
-        });
+
+        accessToken = refreshData.accessToken;
     }
+
+    // Check if the user is authenticated
+    try {
+        const profileResponse = await getProfile(accessToken!);
+        const authData = await profileResponse.json();
+
+        if (!profileResponse.ok || !authData.success) {
+            cookies.delete('accessToken', {path: '/'});
+            cookies.delete('refreshToken', {path: '/'});
+            return false;
+        }
+    } catch (err) {
+        cookies.delete('accessToken', {path: '/'});
+        cookies.delete('refreshToken', {path: '/'});
+        return false;
+    }
+
+    return true;
 }

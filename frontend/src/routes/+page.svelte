@@ -1,6 +1,8 @@
-<script>
+<script lang="ts">
     import Header from "$lib/components/Header.svelte";
-    let authenticated = false;
+    import type { PageProps } from "./$types";
+
+    let { data }: PageProps = $props();
 </script>
 
-<Header authenticated={authenticated}></Header>
+<Header authenticated={data.authenticated}></Header>
