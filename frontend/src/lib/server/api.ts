@@ -17,7 +17,14 @@ export async function requestWithAuth(
             cookies.delete('refreshToken', {path: '/'});
             return json({
                 success: false,
-                message: "No access or refresh token found"
+                status: 400,
+                requestId: null,
+                timestamp: Date.now(),
+                message: "No access or refresh token found",
+                error: {
+                    error: "missing_refresh_token",
+                    details: "No access or refresh token found"
+                }
             });
         }
 
@@ -37,12 +44,7 @@ export async function requestWithAuth(
             if (!refreshResponse.ok || !refreshData.data.accessToken) {
                 cookies.delete('accessToken', {path: '/'});
                 cookies.delete('refreshToken', {path: '/'});
-                return json({
-                    success: false,
-                    status: refreshData.status,
-                    message: refreshData.message,
-                    error: refreshData.error
-                });
+                return json(refreshData);
             }
 
             cookies.set('accessToken', refreshData.data.accessToken, {
@@ -59,10 +61,12 @@ export async function requestWithAuth(
             return json({
                 success: false,
                 status: 503,
-                message: "Could not refresh access token.",
+                requestId: null,
+                timestamp: Date.now(),
+                message: "Could not communicate with API",
                 error: {
                     error: "api_unreachable",
-                    message: "Could not reach the API to refresh the access token."
+                    details: "Could not communicate with API"
                 }
             });
         }
