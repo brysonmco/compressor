@@ -1,4 +1,4 @@
-package service
+package main
 
 import (
 	"github.com/brysonmco/compressor/compression-service/internal/containers"
