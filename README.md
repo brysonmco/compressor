@@ -11,12 +11,16 @@ Compress, transcode, and more
 ```bash
 npm run dev
 ```
-4. The backend and database should be run via Docker Compose, use the `--build` flag to ensure your changes are included
+4. The api and database should be run via Docker Compose, use the `--build` flag to ensure your changes are included
 ```bash
 compose up --build
 ```
 5. Remember to initialize the database with the latest init from `./backend/migrations/sql`
-6. That is it for now!
+6. The compression-service is not designed to run in Docker as it manages containers itself, so you will need to run it
+manually
+```bash
+go run ./compression-service/main.go
+```
 
 ## Feature Tracker
 There is still way too much to do for one of these
