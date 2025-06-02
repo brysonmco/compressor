@@ -26,7 +26,7 @@ services:
       timeout: 5s
       retries: 5
   rabbitmq:
-    image: rabbitmq:latest
+    image: rabbitmq:4-management
     env_file:
       - .env
     ports:
