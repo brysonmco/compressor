@@ -23,6 +23,7 @@ type Service struct {
 type Container struct {
 	Id    string `json:"id"`
 	JobId int64  `json:"jobId"`
+	Port  int    `json:"port"`
 }
 
 func NewService() *Service {
@@ -74,7 +75,7 @@ func (s *Service) CloseClient() error {
 	return s.Client.Close()
 }
 
-func (s *Service) NewWorkerContainer(
+func (s *Service) NewContainer(
 	jobId int64,
 ) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
