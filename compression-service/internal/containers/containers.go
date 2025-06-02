@@ -15,8 +15,9 @@ import (
 )
 
 type Service struct {
-	Client     *client.Client
-	Containers []Container
+	Client      *client.Client
+	WorkerImage string
+	Containers  []Container
 }
 
 type Container struct {
@@ -59,8 +60,8 @@ func (s *Service) InitializeClient() error {
 	authStr := base64.URLEncoding.EncodeToString(encodedJSON)
 
 	// Pull worker image
-	imageUrl := os.Getenv("WORKER_IMAGE_URL")
-	_, err = cli.ImagePull(ctx, imageUrl, image.PullOptions{
+	s.WorkerImage = os.Getenv("WORKER_IMAGE_URL")
+	_, err = cli.ImagePull(ctx, s.WorkerImage, image.PullOptions{
 		RegistryAuth: authStr,
 	})
 	if err != nil {
@@ -70,15 +71,17 @@ func (s *Service) InitializeClient() error {
 	return nil
 }
 
-func (s *Service) NewContainer(
+func (s *Service) NewWorkerContainer(
 	jobId int64,
 ) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
+	containerName := fmt.Sprintf("worker-%d", jobId)
+
 	resp, err := s.Client.ContainerCreate(ctx, &container.Config{
-		Image: "docker.io/library/alpine",
-	}, nil, nil, nil, "")
+		Image: s.WorkerImage,
+	}, nil, nil, nil, containerName)
 	if err != nil {
 		return fmt.Errorf("error creating container: %v", err)
 	}
