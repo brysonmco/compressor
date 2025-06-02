@@ -5,20 +5,122 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"os"
 	"os/exec"
 	"strconv"
 	"time"
 )
 
 func main() {
-
+	fmt.Println("APPLICATION_STARTED")
 	http.HandleFunc("POST /probe", handleProbe)
 	http.HandleFunc("POST /compress", handleCompress)
 
 	// Start the HTTP server
 	if err := http.ListenAndServe(":8080", nil); err != nil {
-		log.Fatal("SERVER_START_FAILED")
+		fmt.Println("SERVER_FAILED")
 	}
+}
+
+// POST /download
+type downloadRequest struct {
+	URL       string `json:"url"`
+	Container string `json:"container"`
+}
+
+func handleDownload(w http.ResponseWriter, r *http.Request) {
+	var req downloadRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		fmt.Println("DOWNLOAD_FAILED")
+		WriteError(w, http.StatusBadRequest, "invalid request body", "invalid_request_body", err)
+		return
+	}
+
+	if req.URL == "" || req.Container == "" {
+		fmt.Println("DOWNLOAD_FAILED")
+		WriteError(w, http.StatusBadRequest, "missing required fields", "missing_fields", "URL and Container are required")
+		return
+	}
+
+	// Get the expected length of the file
+	headResp, err := http.Head(req.URL)
+	if err != nil {
+		fmt.Println("DOWNLOAD_FAILED")
+		WriteError(w, http.StatusInternalServerError, "could not fetch file info", "fetch_error", err)
+		return
+	}
+	if headResp.StatusCode != http.StatusOK {
+		fmt.Println("DOWNLOAD_FAILED")
+		WriteError(w, http.StatusBadRequest, "file not found", "file_not_found", fmt.Sprintf("status code: %d", headResp.StatusCode))
+		return
+	}
+	contentLengthStr := headResp.Header.Get("Content-Length")
+	if contentLengthStr == "" {
+		fmt.Println("DOWNLOAD_FAILED")
+		WriteError(w, http.StatusBadRequest, "missing Content-Length header", "missing_header", "Content-Length is required for download")
+		return
+	}
+	contentLength, err := strconv.ParseInt(contentLengthStr, 10, 64)
+	if err != nil {
+		fmt.Println("DOWNLOAD_FAILED")
+		WriteError(w, http.StatusBadRequest, "invalid Content-Length header", "invalid_header", err)
+		return
+	}
+
+	path := fmt.Sprintf("./input.%s", req.Container)
+
+	// Download the file from the URL
+	cmd, err := downloadFile(req.URL, path)
+	if err != nil {
+		fmt.Println("DOWNLOAD_FAILED")
+		WriteError(w, http.StatusInternalServerError, "could not download file", "download_error", err)
+		return
+	}
+
+	WriteSuccess(w, http.StatusCreated, "file download started", nil)
+	go watchDownload(cmd, path, contentLength)
+}
+
+func downloadFile(
+	url string,
+	path string,
+) (*exec.Cmd, error) {
+	cmd := exec.Command(
+		"curl",
+		"-L",       // Follow redirects
+		"-o", path, // Output to the specified path
+		url, // The URL to download
+	)
+
+	if err := cmd.Start(); err != nil {
+		return nil, err
+	}
+	return cmd, nil
+}
+
+func watchDownload(
+	cmd *exec.Cmd,
+	filePath string,
+	expectedLength int64,
+) {
+	err := cmd.Wait()
+	if err != nil {
+		fmt.Println("DOWNLOAD_FAILED")
+		return
+	}
+
+	fileInfo, err := os.Stat(filePath)
+	if err != nil {
+		fmt.Println("DOWNLOAD_FAILED")
+		return
+	}
+
+	if fileInfo.Size() != expectedLength {
+		fmt.Println("DOWNLOAD_FAILED")
+		return
+	}
+
+	fmt.Println("DOWNLOAD_COMPLETED")
 }
 
 // POST /probe
