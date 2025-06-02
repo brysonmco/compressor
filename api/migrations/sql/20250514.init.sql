@@ -36,6 +36,12 @@ CREATE TABLE plans
     watermark            bool        NOT NULL  -- Whether the plan has a watermark or not
 );
 
+INSERT INTO plans (name, tokens, priority, stripe_product_id, concurrent_jobs, max_resolution, max_file_size, file_retention_hours, watermark) VALUES
+('Free', 100, 'standard', null, 1, 1920 * 1080, 100, 1, true),
+('Basic', 1000, 'standard', 'prod_SJj2m2RWtoIqEK', 5, 1920 * 1080, 1000, 24, false),
+('Pro', -1, 'express', 'prod_SJj5YW5slv9acj', -1, 3840 * 2160, 10000, 48, false),
+('Ultimate', -1, 'express', 'prod_SOb2CDZWI5etAq', -1, 7680 * 4320, 100000, 168, false);
+
 CREATE TABLE subscriptions
 (
     id                     serial PRIMARY KEY,

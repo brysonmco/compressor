@@ -4,6 +4,7 @@ import (
 	"github.com/awesomebfm/compressor/internal/auth"
 	"github.com/awesomebfm/compressor/internal/db"
 	"github.com/awesomebfm/compressor/internal/handlers"
+	"github.com/awesomebfm/compressor/internal/mail"
 	internalmiddleware "github.com/awesomebfm/compressor/internal/middleware"
 	"github.com/awesomebfm/compressor/internal/storage"
 	"github.com/go-chi/chi/v5"
@@ -29,6 +30,9 @@ func main() {
 	// Auth
 	ath := auth.NewAuth()
 	authMiddleware := internalmiddleware.NewAuthMiddleware(ath, database)
+
+	// Mail
+	mailService := mail.NewService()
 
 	// Storage
 	strge, err := storage.NewStorage(
@@ -70,7 +74,10 @@ func main() {
 	r.Use(middleware.Timeout(60 * time.Second))
 
 	// Handlers
-	r.Mount("/v1/auth", handlers.NewAuthHandler(database, ath))
+	r.Mount("/v1/auth", handlers.NewAuthHandler(
+		database,
+		ath,
+		mailService))
 	r.Mount("/v1/subscriptions", handlers.NewSubscriptionHandler(
 		database,
 		authMiddleware,

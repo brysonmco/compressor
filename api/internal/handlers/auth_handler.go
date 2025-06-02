@@ -5,6 +5,7 @@ import (
 	"errors"
 	"github.com/awesomebfm/compressor/internal/auth"
 	"github.com/awesomebfm/compressor/internal/db"
+	"github.com/awesomebfm/compressor/internal/mail"
 	"github.com/awesomebfm/compressor/internal/models"
 	"github.com/awesomebfm/compressor/internal/subscriptions"
 	"github.com/awesomebfm/compressor/internal/utils"
@@ -18,17 +19,20 @@ import (
 )
 
 type AuthHandler struct {
-	Database *db.Database
-	Auth     *auth.Auth
+	Database    *db.Database
+	Auth        *auth.Auth
+	MailService *mail.Service
 }
 
 func NewAuthHandler(
 	database *db.Database,
 	ath *auth.Auth,
+	mailService *mail.Service,
 ) http.Handler {
 	h := &AuthHandler{
-		Database: database,
-		Auth:     ath,
+		Database:    database,
+		Auth:        ath,
+		MailService: mailService,
 	}
 
 	r := chi.NewRouter()
@@ -349,6 +353,17 @@ func (h *AuthHandler) handleSignUp(w http.ResponseWriter, r *http.Request) {
 		log.Printf("error creating session: %v", err)
 		utils.WriteError(w, r, http.StatusInternalServerError, "error creating account", "internal_error", nil)
 		return
+	}
+
+	// Send verification email
+	err = h.MailService.SendVerificationEmail(
+		user.Email,
+		user.FirstName,
+		user.LastName,
+		"TBD",
+	)
+	if err != nil {
+		log.Printf("error sending verification email: %v", err)
 	}
 
 	utils.WriteSuccess(w, r, http.StatusOK, "verify email", map[string]interface{}{
