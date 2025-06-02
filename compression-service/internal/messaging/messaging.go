@@ -3,7 +3,6 @@ package messaging
 import (
 	"fmt"
 	amqp "github.com/rabbitmq/amqp091-go"
-	"log"
 )
 
 type Service struct {
@@ -30,51 +29,4 @@ func (s *Service) Connect(
 
 func (s *Service) Close() error {
 	return s.Connection.Close()
-}
-
-func (s *Service) Consume(queueName string, handler func([]byte) error) error {
-	ch, err := s.Connection.Channel()
-	if err != nil {
-		return err
-	}
-	// Keep channel open for consuming
-
-	_, err = ch.QueueDeclare(
-		queueName,
-		true,
-		false,
-		false,
-		false,
-		nil,
-	)
-	if err != nil {
-		return err
-	}
-
-	msgs, err := ch.Consume(
-		queueName,
-		"",
-		false, // manual ack
-		false,
-		false,
-		false,
-		nil,
-	)
-	if err != nil {
-		return err
-	}
-
-	go func() {
-		for d := range msgs {
-			err = handler(d.Body)
-			if err != nil {
-				log.Printf("Handler error: %v. Nacking message.", err)
-				d.Nack(false, false)
-				continue
-			}
-			d.Ack(false)
-		}
-	}()
-
-	return nil
 }

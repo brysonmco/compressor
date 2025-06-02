@@ -38,7 +38,6 @@ func (s *Service) InitializeClient() error {
 	if err != nil {
 		return fmt.Errorf("error initializing docker client: %v", err)
 	}
-	defer cli.Close()
 	s.Client = cli
 
 	// Authenticate against container registry
@@ -69,6 +68,10 @@ func (s *Service) InitializeClient() error {
 	}
 
 	return nil
+}
+
+func (s *Service) CloseClient() error {
+	return s.Client.Close()
 }
 
 func (s *Service) NewWorkerContainer(
