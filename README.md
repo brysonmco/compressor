@@ -16,7 +16,13 @@ npm run dev
 compose up --build
 ```
 5. Remember to initialize the database with the latest init from `./backend/migrations/sql`
-6. The compression-service is not designed to run in Docker as it manages containers itself, so you will need to run it
+6. Set GHCR credentials on the Compression Service server, make sure the token can read containers
+```bash
+export GHCR_USERNAME=
+export GHCR_TOKEN=
+
+```
+7. The Compression Service is not designed to run in Docker as it manages containers itself, so you will need to run it
 manually
 ```bash
 go run ./compression-service/main.go

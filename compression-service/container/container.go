@@ -13,6 +13,7 @@ import (
 
 func main() {
 	fmt.Println("APPLICATION_STARTED")
+	http.HandleFunc("POST /download", handleDownload)
 	http.HandleFunc("POST /probe", handleProbe)
 	http.HandleFunc("POST /compress", handleCompress)
 
@@ -154,21 +155,21 @@ func handleProbe(w http.ResponseWriter, r *http.Request) {
 
 	output, err := cmd.Output()
 	if err != nil {
-		log.Println("PROBE_FAILED")
+		fmt.Println("PROBE_FAILED")
 		WriteError(w, http.StatusInternalServerError, "could not run ffprobe", "ffprobe_error", err)
 		return
 	}
 
 	var probeOutput fFProbeOutput
 	if err = json.Unmarshal(output, &probeOutput); err != nil {
-		log.Println("PROBE_JSON_UNMARSHAL_FAILED")
+		fmt.Println("PROBE_FAILED")
 		WriteError(w, http.StatusInternalServerError, "could not parse ffprobe output", "json_unmarshal_error", err)
 		return
 	}
 
 	probeBytes, err := json.Marshal(probeOutput)
 	if err != nil {
-		log.Println("PROBE_JSON_MARSHAL_FAILED")
+		fmt.Println("PROBE_FAILED")
 		WriteError(w, http.StatusInternalServerError, "could not marshal ffprobe output", "json_marshal_error", err)
 		return
 	}
@@ -191,13 +192,16 @@ type compressRequest struct {
 func handleCompress(w http.ResponseWriter, r *http.Request) {
 	var req compressRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		fmt.Println("COMPRESSION_FAILED")
 		WriteError(w, http.StatusBadRequest, "invalid request body", "invalid_request_body", err)
 		return
 	}
 
+	outputPath := fmt.Sprintf("./output.%s", req.InputContainer)
+
 	cmd, err := compress(
 		fmt.Sprintf("./input.%s", req.InputContainer),
-		fmt.Sprintf("./output.%s", req.InputContainer),
+		outputPath,
 		req.MaxWidth,
 		req.MaxHeight,
 		req.Codec,
@@ -206,13 +210,15 @@ func handleCompress(w http.ResponseWriter, r *http.Request) {
 		req.AudioBitrate,
 	)
 	if err != nil {
+		fmt.Println("COMPRESSION_FAILED")
 		WriteError(w, http.StatusInternalServerError, "could not start compression", "internal_error", err)
 		return
 	}
 
 	WriteSuccess(w, http.StatusCreated, "compression started", nil)
+	fmt.Println("STARTED_COMPRESSION")
 
-	go waitForCompletion(cmd)
+	go watchCompression(cmd, outputPath)
 }
 
 // TODO: currently only works for H.264 and H.265 codecs
@@ -244,18 +250,25 @@ func compress(
 		outputPath,
 	)
 	if err := cmd.Start(); err != nil {
-		return nil, fmt.Errorf("failed to start command: %w", err)
+		return nil, err
 	}
 
 	return cmd, nil
 }
 
-func waitForCompletion(cmd *exec.Cmd) {
+func watchCompression(
+	cmd *exec.Cmd,
+	filePath string,
+) {
 	err := cmd.Wait()
 	if err != nil {
-		log.Fatal("COMPRESSION_FAILED")
-	} else {
-		log.Println("compression completed successfully")
+		fmt.Println("COMPRESSION_FAILED")
+	}
+
+	// Ensure file is present
+	_, err = os.Stat(filePath)
+	if err != nil {
+		fmt.Println("COMPRESSION_FAILED")
 	}
 }
 
