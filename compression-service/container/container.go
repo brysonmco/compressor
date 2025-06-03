@@ -174,7 +174,11 @@ func handleProbe(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	fmt.Println("START_PROBE_DATA")
 	fmt.Println(string(probeBytes))
+	fmt.Println("END_PROBE_DATA")
+
+	WriteSuccess(w, http.StatusOK, "probe data retrieved", probeOutput)
 }
 
 // POST /compress
@@ -270,6 +274,37 @@ func watchCompression(
 	if err != nil {
 		fmt.Println("COMPRESSION_FAILED")
 	}
+
+	fmt.Println("COMPRESSION_COMPLETED")
+}
+
+// POST /upload
+type uploadRequest struct {
+	URL       string `json:"url"`
+	Container string `json:"container"`
+}
+
+func handleUpload(w http.ResponseWriter, r *http.Request) {
+	var req uploadRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		fmt.Println("UPLOAD_FAILED")
+		WriteError(w, http.StatusBadRequest, "invalid request body", "invalid_request_body", err)
+		return
+	}
+
+	if req.URL == "" || req.Container == "" {
+		fmt.Println("UPLOAD_FAILED")
+		WriteError(w, http.StatusBadRequest, "missing required fields", "missing_fields", "URL and Container are required")
+		return
+	}
+
+	// Upload the file to the specified URL
+	cmd := exec.Command(
+		"curl",
+		"-X", "POST",
+		"-F", fmt.Sprintf("file=@%s", fmt.Sprintf("./output.%s", req.Container)),
+		"-F", fmt.Sprintf("container=%s", req.Container))
+	fmt.Println(cmd)
 }
 
 type ErrorResponse struct { // Human-readable
