@@ -29,8 +29,12 @@ type Container struct {
 	Port  int    `json:"port"`
 }
 
-func NewService() *Service {
-	return &Service{}
+func NewService(
+	workerImage string,
+) *Service {
+	return &Service{
+		WorkerImage: workerImage,
+	}
 }
 
 func (s *Service) InitializeClient() error {
@@ -45,30 +49,33 @@ func (s *Service) InitializeClient() error {
 	s.Client = cli
 
 	// Authenticate against container registry
-	username := os.Getenv("DOCKER_USERNAME")
-	password := os.Getenv("DOCKER_PASSWORD")
-	if len(username) == 0 || len(password) == 0 {
-		return fmt.Errorf("missing GHCR credentials")
-	}
+	if os.Getenv("DEPLOYMENT_TARGET") != "development" {
+		username := os.Getenv("DOCKER_USERNAME")
+		password := os.Getenv("DOCKER_PASSWORD")
+		if len(username) == 0 || len(password) == 0 {
+			return fmt.Errorf("missing GHCR credentials")
+		}
 
-	authConfig := registry.AuthConfig{
-		Username: username,
-		Password: password,
-	}
-	encodedJSON, err := json.Marshal(authConfig)
-	if err != nil {
-		// Do not pass the error here as it likely contains credentials
-		return errors.New("error marshalling auth config")
-	}
-	authStr := base64.URLEncoding.EncodeToString(encodedJSON)
+		authConfig := registry.AuthConfig{
+			Username: username,
+			Password: password,
+		}
+		encodedJSON, err := json.Marshal(authConfig)
+		if err != nil {
+			// Do not pass the error here as it likely contains credentials
+			return errors.New("error marshalling auth config")
+		}
+		authStr := base64.URLEncoding.EncodeToString(encodedJSON)
 
-	// Pull worker image
-	s.WorkerImage = os.Getenv("WORKER_IMAGE_URL")
-	_, err = cli.ImagePull(ctx, s.WorkerImage, image.PullOptions{
-		RegistryAuth: authStr,
-	})
-	if err != nil {
-		return fmt.Errorf("error pulling docker image: %v", err)
+		// Pull worker image
+		_, err = cli.ImagePull(ctx, s.WorkerImage, image.PullOptions{
+			RegistryAuth: authStr,
+		})
+		if err != nil {
+			return fmt.Errorf("error pulling docker image: %v", err)
+		}
+	} else {
+		// In development, we assume the image is already built and available locally
 	}
 
 	return nil
@@ -129,6 +136,15 @@ func (s *Service) RemoveContainer(
 	}
 
 	return nil
+}
+
+func (s *Service) GetContainer(jobId int64) (*Container, error) {
+	for _, cont := range s.Containers {
+		if cont.JobId == jobId {
+			return cont, nil
+		}
+	}
+	return nil, fmt.Errorf("container for job %d not found", jobId)
 }
 
 type ContainerEvent struct {

@@ -89,23 +89,26 @@ func (s *Service) HandleNewJob(
 			bodyBytes, err := json.Marshal(body)
 			if err != nil {
 				// IRDK
+				return
 			}
 
 			r, err := http.NewRequest("POST", fmt.Sprintf("http://localhost:%d/download", container.Port), bytes.NewBuffer(bodyBytes))
 			if err != nil {
 				// IRDK
+				return
 			}
 			r.Header.Add("Content-Type", "application/json")
 			client := &http.Client{}
 			resp, err := client.Do(r)
 			if err != nil {
 				// IRDK
+				return
 			}
-			defer resp.Body.Close()
 
 			if resp.StatusCode != http.StatusCreated {
 				// IRDK
 			}
+			resp.Body.Close()
 
 		case "SERVER_FAILED":
 			// Try again??

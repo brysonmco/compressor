@@ -1,37 +1,37 @@
-FROM golang:1.23-bookworm AS go-builder
+FROM golang:1.23-alpine AS go-builder
 
 WORKDIR /build
 
 COPY . .
 
-RUN go build -o app container.go
+RUN CGO_ENABLED=0 go build -o app container.go
 
-FROM debian:bookwork-slim AS ffmpeg-builder
+FROM alpine:latest
 
-WORKDIR /build
+WORKDIR /app
 
-RUN apt-get update -qq && sudo apt-get -y install \
-      autoconf \
-      automake \
-      build-essential \
-      cmake \
-      git-core \
-      libass-dev \
-      libfreetype6-dev \
-      libgnutls28-dev \
-      libmp3lame-dev \
-      libsdl2-dev \
-      libtool \
-      libva-dev \
-      libvdpau-dev \
-      libvorbis-dev \
-      libxcb1-dev \
-      libxcb-shm0-dev \
-      libxcb-xfixes0-dev \
-      meson \
-      ninja-build \
-      pkg-config \
-      texinfo \
-      wget \
-      yasm \
-      zlib1g-dev
+COPY --from=go-builder /build/app .
+
+RUN addgroup -S ffmpeg && adduser -S -G ffmpeg ffmpeg
+
+RUN apk add --no-cache curl tar xz
+
+RUN curl -L -o /tmp/ffmpeg.tar.xz https://johnvansickle.com/ffmpeg/builds/ffmpeg-git-amd64-static.tar.xz && \
+    mkdir -p /opt/ffmpeg && \
+    tar -xf /tmp/ffmpeg.tar.xz -C /opt/ffmpeg --strip-components=1 && \
+    ln -s /opt/ffmpeg/ffmpeg /usr/local/bin/ffmpeg && \
+    ln -s /opt/ffmpeg/ffprobe /usr/local/bin/ffprobe && \
+    rm -rf /tmp/ffmpeg.tar.xz
+
+RUN chown -R ffmpeg:ffmpeg /opt/ffmpeg /app && \
+    chmod +x /opt/ffmpeg/ffmpeg && \
+    chmod +x /opt/ffmpeg/ffprobe
+
+RUN ffmpeg -version && \
+    ffprobe -version
+
+USER ffmpeg
+
+EXPOSE 8080
+
+CMD ["/app/app"]

@@ -9,7 +9,7 @@ import (
 
 func main() {
 	// Container service
-	containerService := containers.NewService()
+	containerService := containers.NewService(os.Getenv("WORKER_IMAGE"))
 	err := containerService.InitializeClient()
 	if err != nil {
 		log.Fatal(err)
