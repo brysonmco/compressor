@@ -51,8 +51,8 @@ func (s *Service) HandleNewJob(
 			break
 		}
 		if container != nil {
-			// If we have a container, remove it before retrying
-			if err := s.ContainerService.RemoveContainer(container.Id); err != nil {
+			// If the container was created but failed to start, remove it
+			if err = s.ContainerService.RemoveContainer(container.Id); err != nil {
 				log.Printf("error removing container %s: %v", container.Id, err)
 			}
 		}
@@ -63,7 +63,7 @@ func (s *Service) HandleNewJob(
 		}
 	}
 
-	if container == nil {
+	if container == nil || container.Id == "" {
 		log.Printf("failed to create container for job %d after 3 attempts: %v", jobId, err)
 		return
 	}
