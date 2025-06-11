@@ -190,11 +190,10 @@ func (h *AuthHandler) handleLogin(w http.ResponseWriter, r *http.Request) {
 
 // POST /v1/auth/signup
 type signUpRequest struct {
-	Email           string `json:"email"`
-	FirstName       string `json:"firstName"`
-	LastName        string `json:"lastName"`
-	Password        string `json:"password"`
-	ConfirmPassword string `json:"confirmPassword"`
+	Email     string `json:"email"`
+	FirstName string `json:"firstName"`
+	LastName  string `json:"lastName"`
+	Password  string `json:"password"`
 }
 
 func (h *AuthHandler) handleSignUp(w http.ResponseWriter, r *http.Request) {
@@ -221,17 +220,9 @@ func (h *AuthHandler) handleSignUp(w http.ResponseWriter, r *http.Request) {
 	if data.Password == "" {
 		details["password"] = "missing required field"
 	}
-	if data.ConfirmPassword == "" {
-		details["confirmPassword"] = "missing required field"
-	}
 
 	if len(details) > 0 {
 		utils.WriteError(w, r, http.StatusBadRequest, "missing required fields", "missing_fields", details)
-		return
-	}
-
-	if data.Password != data.ConfirmPassword {
-		utils.WriteError(w, r, http.StatusBadRequest, "passwords do not match", "password_mismatch", nil)
 		return
 	}
 
