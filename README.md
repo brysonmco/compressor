@@ -29,5 +29,8 @@ go run ./compression-service/main.go
 ```
 
 ## Feature Tracker
-There is still way too much to do for one of these
+The application is not complete, these features I plan to add later
 - [ ] The entire application
+- [ ] 2FA Verification Codes
+- [ ] Social Login (Google and Apple)
+- [ ] Progress Bar for Compression Jobs
