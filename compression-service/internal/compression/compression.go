@@ -63,6 +63,7 @@ func (s *Service) HandleNewJob(
 		}
 	}
 
+	// Ensure the container was made
 	if container == nil || container.Id == "" {
 		log.Printf("failed to create container for job %d after 3 attempts: %v", jobId, err)
 		return

@@ -159,3 +159,19 @@ func (d *Database) UpdateUser(
 	}
 	return err
 }
+
+func (d *Database) DeleteUser(
+	ctx context.Context,
+	id int64,
+) error {
+	query := `DELETE FROM users WHERE id = $1`
+
+	cmdTag, err := d.Pool.Exec(ctx, query, id)
+	if err != nil {
+		return err
+	}
+	if cmdTag.RowsAffected() == 0 {
+		return fmt.Errorf("could not delete user")
+	}
+	return nil
+}

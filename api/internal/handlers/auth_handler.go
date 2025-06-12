@@ -200,7 +200,6 @@ func (h *AuthHandler) handleSignUp(w http.ResponseWriter, r *http.Request) {
 	var data signUpRequest
 	err := json.NewDecoder(r.Body).Decode(&data)
 	if err != nil {
-		log.Printf("error parsing sign up request JSON: %v", err)
 		utils.WriteError(w, r, http.StatusBadRequest, "error parsing JSON", "invalid_json", nil)
 		return
 	}
@@ -232,15 +231,15 @@ func (h *AuthHandler) handleSignUp(w http.ResponseWriter, r *http.Request) {
 		utils.WriteError(w, r, http.StatusBadRequest, "account already exists", "account_exists", nil)
 		return
 	} else if !errors.Is(err, pgx.ErrNoRows) {
-		log.Printf("error finding user by email: %v", err)
+		log.Printf("database error finding user by email: %v", err)
 		utils.WriteError(w, r, http.StatusInternalServerError, "error creating account", "internal_error", nil)
 		return
 	}
 
 	// Hash password
-	hashedPassword, err := h.Auth.HashPassword(data.Password)
+	passwordHash, err := h.Auth.HashPassword(data.Password)
 	if err != nil {
-		log.Printf("error hashing password: %v", err)
+		log.Printf("error with HashPassword method: %v", err)
 		utils.WriteError(w, r, http.StatusInternalServerError, "error creating account", "internal_error", nil)
 		return
 	}
@@ -250,10 +249,10 @@ func (h *AuthHandler) handleSignUp(w http.ResponseWriter, r *http.Request) {
 		Email:        data.Email,
 		FirstName:    data.FirstName,
 		LastName:     data.LastName,
-		PasswordHash: hashedPassword,
+		PasswordHash: passwordHash,
 	})
-	if err != nil {
-		log.Printf("error creating user: %v", err)
+	if err != nil || user.Id == 0 {
+		log.Printf("database error creating user: %v", err)
 		utils.WriteError(w, r, http.StatusInternalServerError, "error creating account", "internal_error", nil)
 		return
 	}
@@ -262,13 +261,17 @@ func (h *AuthHandler) handleSignUp(w http.ResponseWriter, r *http.Request) {
 	customer, err := subscriptions.CreateStripeCustomer(user)
 	if err != nil {
 		log.Printf("error creating customer: %v", err)
+		err = h.Database.DeleteUser(r.Context(), user.Id) // Ensure we don't have a situation where a "partial user" exists
+		if err != nil {
+			log.Printf("a dangerous partial state user exists and will cause problems id: %v", user.Id)
+		}
 		utils.WriteError(w, r, http.StatusInternalServerError, "error creating account", "internal_error", nil)
 		return
 	}
 	user.StripeCustomerId = customer.ID
 	err = h.Database.UpdateUser(r.Context(), user)
 	if err != nil {
-		log.Printf("error updating user: %v", err)
+		log.Printf("a dangerous partial state user exists and will cause problems id: %v", user.Id)
 		utils.WriteError(w, r, http.StatusInternalServerError, "error creating account", "internal_error", nil)
 		return
 	}
@@ -309,7 +312,9 @@ func (h *AuthHandler) handleSignUp(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Set refresh token cookie
-	switch os.Getenv("DEPLOYMENT_TARGET") {
+	// For the time being we will pass refresh tokens back in the JSON as the SvelteKit backend will be the only receiver
+	// of this request
+	/*switch os.Getenv("DEPLOYMENT_TARGET") {
 	case "development":
 		http.SetCookie(w, &http.Cookie{
 			Name:     "refreshToken",
@@ -330,7 +335,7 @@ func (h *AuthHandler) handleSignUp(w http.ResponseWriter, r *http.Request) {
 			SameSite: http.SameSiteStrictMode,
 			Domain:   "api-compressor.brysonmcbreen.dev",
 		})
-	}
+	}*/
 
 	// Persist session
 	now := time.Now()
@@ -359,6 +364,7 @@ func (h *AuthHandler) handleSignUp(w http.ResponseWriter, r *http.Request) {
 
 	utils.WriteSuccess(w, r, http.StatusOK, "verify email", map[string]interface{}{
 		"accessToken":   accessToken,
+		"refreshToken":  refreshToken,
 		"emailVerified": false,
 	})
 }
