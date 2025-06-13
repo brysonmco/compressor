@@ -1,5 +1,6 @@
 import { type Handle, redirect } from "@sveltejs/kit";
 import {requestWithAuth} from "$lib/server/api";
+import {isAuthenticated} from "$lib/server/auth";
 
 export const handle = (async ({ event, resolve }) => {
     if (!shouldProtectRoute(event.route.id!)) {
@@ -7,7 +8,11 @@ export const handle = (async ({ event, resolve }) => {
     }
 
     // Check if the user is authenticated
-    const profileResponse = await requestWithAuth("/users/profile", "GET", event.cookies, null);
+    const profileResponse = await isAuthenticated(event.cookies)
+    if (!profileResponse) {
+        // If not authenticated, redirect to the login page
+        throw redirect(302, '/login');
+    }
 
     return resolve(event);
 }) satisfies Handle

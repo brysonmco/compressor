@@ -74,6 +74,80 @@ export async function login(
     }
 }
 
+export async function isAuthenticated(
+    cookies: Cookies
+): Promise<boolean> {
+    let accessToken = cookies.get("accessToken");
+    const refreshToken = cookies.get("refreshToken");
+
+    if (!accessToken) {
+        if (!refreshToken) {
+            cookies.delete('accessToken', {path: '/'});
+            cookies.delete('refreshToken', {path: '/'});
+            return false;
+        }
+
+        try {
+            const refreshResponse = await fetch(apiBaseUrl + "/auth/refresh", {
+                method: "POST",
+                credentials: "include",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({
+                    refreshToken,
+                })
+            });
+            const refreshData = await refreshResponse.json();
+
+            if (!refreshResponse.ok || !refreshData.data.accessToken) {
+                cookies.delete('accessToken', {path: '/'});
+                cookies.delete('refreshToken', {path: '/'});
+                return false;
+            }
+
+            cookies.set('accessToken', refreshData.data.accessToken, {
+                httpOnly: true,
+                path: '/',
+                sameSite: 'strict',
+                maxAge: 60 * 60
+            });
+
+            accessToken = refreshData.data.accessToken;
+        } catch (err) {
+            cookies.delete('accessToken', {path: '/'});
+            cookies.delete('refreshToken', {path: '/'});
+            return false;
+        }
+    }
+
+    try {
+        const profileResponse = await fetch(apiBaseUrl + "/users/profile", {
+            method: "GET",
+            headers: {
+                "Content-Type": "application/json",
+                "Authorization": `Bearer ${accessToken}`
+            }
+        })
+        if (!profileResponse.ok) {
+            cookies.delete('accessToken', {path: '/'});
+            cookies.delete('refreshToken', {path: '/'});
+            return false;
+        }
+        const profileData = await profileResponse.json();
+        if (!profileData.success) {
+            cookies.delete('accessToken', {path: '/'});
+            cookies.delete('refreshToken', {path: '/'});
+            return false;
+        }
+        return true;
+    } catch (err) {
+        cookies.delete('accessToken', {path: '/'});
+        cookies.delete('refreshToken', {path: '/'});
+        return false;
+    }
+}
+
 export async function signup(
     email: string,
     password: string,

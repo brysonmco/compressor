@@ -1,8 +1,7 @@
 import type {Actions} from "./$types";
-import {apiBaseUrl} from "$lib/config";
 import {fail, redirect} from "@sveltejs/kit";
-import {accessToken} from "$lib/stores/auth";
 import type {PageServerLoad} from "../../../.svelte-kit/types/src/routes/pricing/$types";
+import {apiBaseUrl} from "$lib/server/config";
 
 export const load: PageServerLoad = async ({cookies}) => {
     // Check if the user is authenticated
@@ -48,7 +47,6 @@ export const actions = {
             }
         }
 
-        accessToken.set(result.accessToken);
         return redirect(303, '/');
     }
 } satisfies Actions;
