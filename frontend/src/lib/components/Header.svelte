@@ -11,16 +11,16 @@
         </div>
 
         <nav class="hidden text-xl font-medium gap-[2rem] lg:flex">
-            <a href="/" class="hover:text-[#0077cc]">Home</a>
-            <a href="/features" class="hover:text-[#0077cc]">Features</a>
-            <a href="/pricing" class="hover:text-[#0077cc]">Pricing</a>
-            <a href="/support" class="hover:text-[#0077cc]">Support</a>
+            <a href="/" class="hover:text-indigo-800">Home</a>
+            <a href="/features" class="hover:text-indigo-800">Features</a>
+            <a href="/pricing" class="hover:text-indigo-800">Pricing</a>
+            <a href="/support" class="hover:text-indigo-800">Support</a>
         </nav>
 
-        {#if authenticated}
+        {#if !authenticated}
             <AccountSelector tokens={tokens}></AccountSelector>
         {:else}
-            <a href="/signup" class="bg-brand px-6 py-2 rounded-lg text-bg font-medium text-xl hover:bg-brand-dark">Sign
+            <a href="/signup" class="bg-indigo-800 px-5 py-1.5 rounded-lg text-bg font-medium text-lg hover:bg-indigo-900 transition-colors">Sign
                 Up</a>
         {/if}
     </div>

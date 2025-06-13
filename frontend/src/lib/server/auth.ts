@@ -140,6 +140,7 @@ export async function isAuthenticated(
             cookies.delete('refreshToken', {path: '/'});
             return false;
         }
+
         return true;
     } catch (err) {
         cookies.delete('accessToken', {path: '/'});
@@ -150,9 +151,9 @@ export async function isAuthenticated(
 
 export async function signup(
     email: string,
-    password: string,
     firstName: string,
-    lastName: string
+    lastName: string,
+    password: string
 ): Promise<Response> {
     try {
         const response = await fetch(apiBaseUrl + "/auth/signup", {
@@ -162,44 +163,29 @@ export async function signup(
             },
             body: JSON.stringify({
                 email,
-                password,
                 firstName,
                 lastName,
+                password,
             })
         });
 
         const data = await response.json();
         if (!response.ok) {
-            switch (data.error) {
-                case "missing_fields":
-                    return json({
-                        success: false,
-                        fieldErrors: data.details,
-                    });
-                case "email_already_exists":
-                    return json({
-                        success: false,
-                        fieldErrors: {
-                            email: "Email already exists.",
-                        }
-                    });
-                default:
-                    return json({
-                        success: false,
-                        message: "Error occurred while registering. Please try again later."
-                    });
-            }
+            return json({
+                success: false,
+                error: data.error.error
+            });
         }
 
         return json({
             success: true,
-            accessToken: data.accessToken,
-            refreshToken: data.refreshToken,
+            accessToken: data.data.accessToken,
+            refreshToken: data.data.refreshToken,
         });
     } catch (e) {
         return json({
             success: false,
-            message: "Error occurred while registering. Please try again later."
+            error: "server_error",
         });
     }
 }

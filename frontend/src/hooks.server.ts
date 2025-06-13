@@ -8,8 +8,8 @@ export const handle = (async ({ event, resolve }) => {
     }
 
     // Check if the user is authenticated
-    const profileResponse = await isAuthenticated(event.cookies)
-    if (!profileResponse) {
+    const authenticated = await isAuthenticated(event.cookies)
+    if (!authenticated) {
         // If not authenticated, redirect to the login page
         throw redirect(302, '/login');
     }
