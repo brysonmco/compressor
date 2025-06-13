@@ -44,7 +44,6 @@ export async function login(
     try {
         const response = await fetch(apiBaseUrl + "/auth/login", {
             method: "POST",
-            credentials: "include",
             headers: {
                 "Content-Type": "application/json"
             },
@@ -56,37 +55,21 @@ export async function login(
 
         const data = await response.json();
         if (!response.ok) {
-            switch (data.error) {
-                case "missing_fields":
-                    return json({
-                        success: false,
-                        fieldErrors: data.details,
-                    });
-                case "invalid_credentials":
-                    return json({
-                        success: false,
-                        fieldErrors: {
-                            email: "Incorrect email or password.",
-                            password: "Incorrect email or password.",
-                        }
-                    });
-                default:
-                    return json({
-                        success: false,
-                        message: "Error occurred while logging in. Please try again later."
-                    });
-            }
+            return json({
+                success: false,
+                error: data.error.error
+            });
         }
 
         return json({
             success: true,
-            accessToken: data.accessToken,
-            refreshToken: data.refreshToken,
+            accessToken: data.data.accessToken,
+            refreshToken: data.data.refreshToken,
         });
     } catch (e) {
         return json({
             success: false,
-            message: "Error occurred while logging in. Please try again later."
+            error: "server_error",
         });
     }
 }
@@ -100,7 +83,6 @@ export async function signup(
     try {
         const response = await fetch(apiBaseUrl + "/auth/signup", {
             method: "POST",
-            credentials: "include",
             headers: {
                 "Content-Type": "application/json"
             },
@@ -146,53 +128,4 @@ export async function signup(
             message: "Error occurred while registering. Please try again later."
         });
     }
-}
-
-export async function isAuthenticated(cookies: Cookies): Promise<boolean> {
-    let accessToken = cookies.get('accessToken');
-    let refreshToken = cookies.get('refreshToken');
-
-    if (!accessToken) {
-        if (!refreshToken) {
-            cookies.delete('accessToken', {path: '/'});
-            cookies.delete('refreshToken', {path: '/'});
-            return false;
-        }
-
-        const refreshResponse = await refresh(refreshToken);
-        const refreshData = await refreshResponse.json();
-
-        if (!refreshData.success || !refreshData.accessToken) {
-            cookies.delete('accessToken', {path: '/'});
-            cookies.delete('refreshToken', {path: '/'});
-            return false;
-        }
-
-        cookies.set('accessToken', refreshData.accessToken, {
-            httpOnly: true,
-            path: '/',
-            sameSite: 'strict',
-            maxAge: 60 * 60
-        });
-
-        accessToken = refreshData.accessToken;
-    }
-
-    // Check if the user is authenticated
-    try {
-        const profileResponse = await getProfile(accessToken!);
-        const authData = await profileResponse.json();
-
-        if (!profileResponse.ok || !authData.success) {
-            cookies.delete('accessToken', {path: '/'});
-            cookies.delete('refreshToken', {path: '/'});
-            return false;
-        }
-    } catch (err) {
-        cookies.delete('accessToken', {path: '/'});
-        cookies.delete('refreshToken', {path: '/'});
-        return false;
-    }
-
-    return true;
 }

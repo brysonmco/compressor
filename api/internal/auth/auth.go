@@ -17,14 +17,19 @@ type Auth struct {
 	PublicKey  paseto.V4AsymmetricPublicKey
 }
 
-func NewAuth() *Auth {
-	privateKey := paseto.NewV4AsymmetricSecretKey()
+func NewAuth(
+	privateKeyHex string,
+) (*Auth, error) {
+	privateKey, err := paseto.NewV4AsymmetricSecretKeyFromHex(privateKeyHex)
+	if err != nil {
+		return nil, err
+	}
 	publicKey := privateKey.Public()
 
 	return &Auth{
 		PrivateKey: privateKey,
 		PublicKey:  publicKey,
-	}
+	}, nil
 }
 
 func (a *Auth) HashPassword(password string) (string, error) {
@@ -40,13 +45,14 @@ func (a *Auth) CheckPasswordHash(password, hash string) bool {
 	return err == nil
 }
 
-func (a *Auth) GenerateAccessToken(id int64) (string, error) {
+func (a *Auth) GenerateAccessToken(id int64, role string) (string, error) {
 	token := paseto.NewToken()
 	now := time.Now()
 	token.SetIssuedAt(now)
 	token.SetNotBefore(now)
 	token.SetExpiration(now.Add(time.Hour))
 	token.SetSubject(strconv.FormatInt(id, 10))
+	token.Set("role", role)
 
 	return token.V4Sign(a.PrivateKey, nil), nil
 }

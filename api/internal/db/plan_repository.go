@@ -3,7 +3,7 @@ package db
 import (
 	"context"
 	"fmt"
-	"github.com/awesomebfm/compressor/internal/models"
+	"github.com/brysonmco/compressor/internal/models"
 )
 
 func (d *Database) FindAllPlans(

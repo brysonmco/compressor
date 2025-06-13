@@ -2,10 +2,10 @@ package handlers
 
 import (
 	"encoding/json"
-	"github.com/awesomebfm/compressor/internal/db"
-	"github.com/awesomebfm/compressor/internal/middleware"
-	"github.com/awesomebfm/compressor/internal/models"
-	"github.com/awesomebfm/compressor/internal/utils"
+	"github.com/brysonmco/compressor/internal/db"
+	"github.com/brysonmco/compressor/internal/middleware"
+	"github.com/brysonmco/compressor/internal/models"
+	"github.com/brysonmco/compressor/internal/utils"
 	"github.com/go-chi/chi/v5"
 	"github.com/stripe/stripe-go/v82"
 	billing_session "github.com/stripe/stripe-go/v82/billingportal/session"

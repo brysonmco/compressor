@@ -1,7 +1,7 @@
 package subscriptions
 
 import (
-	"github.com/awesomebfm/compressor/internal/models"
+	"github.com/brysonmco/compressor/internal/models"
 	"github.com/stripe/stripe-go/v82"
 	"github.com/stripe/stripe-go/v82/customer"
 	"github.com/stripe/stripe-go/v82/price"

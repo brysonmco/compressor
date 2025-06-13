@@ -1,12 +1,12 @@
 package main
 
 import (
-	"github.com/awesomebfm/compressor/internal/auth"
-	"github.com/awesomebfm/compressor/internal/db"
-	"github.com/awesomebfm/compressor/internal/handlers"
-	"github.com/awesomebfm/compressor/internal/mail"
-	internalmiddleware "github.com/awesomebfm/compressor/internal/middleware"
-	"github.com/awesomebfm/compressor/internal/storage"
+	"github.com/brysonmco/compressor/internal/auth"
+	"github.com/brysonmco/compressor/internal/db"
+	"github.com/brysonmco/compressor/internal/handlers"
+	"github.com/brysonmco/compressor/internal/mail"
+	internalmiddleware "github.com/brysonmco/compressor/internal/middleware"
+	"github.com/brysonmco/compressor/internal/storage"
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
 	"github.com/go-chi/cors"
@@ -28,7 +28,10 @@ func main() {
 	}
 
 	// Auth
-	ath := auth.NewAuth()
+	ath, err := auth.NewAuth(os.Getenv("PASETO_PRIVATE_KEY"))
+	if err != nil {
+		log.Fatalf("PASETO doesn't work: %v", err)
+	}
 	authMiddleware := internalmiddleware.NewAuthMiddleware(ath, database)
 
 	// Mail

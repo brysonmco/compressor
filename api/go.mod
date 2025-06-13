@@ -1,4 +1,4 @@
-module github.com/awesomebfm/compressor
+module github.com/brysonmco/compressor
 
 go 1.24.3
 

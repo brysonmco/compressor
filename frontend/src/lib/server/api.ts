@@ -1,13 +1,12 @@
 import {type Cookies, json} from "@sveltejs/kit";
-import { apiBaseUrl } from "$lib/server/config";
-import {refresh} from "$lib/server/auth";
+import {apiBaseUrl} from "$lib/server/config";
 
 export async function requestWithAuth(
     endpoint: string,
     method: "GET" | "POST" | "PUT" | "DELETE",
     cookies: Cookies,
-    body: BodyInit
-): Promise<Response> {
+    body: BodyInit | null
+) {
     let accessToken = cookies.get("accessToken");
     let refreshToken = cookies.get("refreshToken");
 
@@ -23,7 +22,7 @@ export async function requestWithAuth(
                 message: "No access or refresh token found",
                 error: {
                     error: "missing_refresh_token",
-                    details: "No access or refresh token found"
+                    details: null
                 }
             });
         }
@@ -65,14 +64,14 @@ export async function requestWithAuth(
                 timestamp: Date.now(),
                 message: "Could not communicate with API",
                 error: {
-                    error: "api_unreachable",
-                    details: "Could not communicate with API"
+                    error: "server_error",
+                    details: null
                 }
             });
         }
     }
 
-    // At this point, we have an access token, however we are unsure if it is valid.
+    // At this point, we have an access token, however, we are unsure if it is valid.
     try {
         const response = await fetch(apiBaseUrl + endpoint, {
             method: method,
@@ -83,19 +82,18 @@ export async function requestWithAuth(
             body: body ? JSON.stringify(body) : undefined
         });
 
-        if (!response.ok) {
-            const errorData = await response.json();
-            return json({
-                success: false,
-                message: errorData.message || "An error occurred while processing the request."
-            });
-        }
-
-        return response;
+        return await response.json();
     } catch (err) {
         return json({
             success: false,
-            message: "Could not reach API"
+            status: 503,
+            requestId: null,
+            timestamp: Date.now(),
+            message: "Could not communicate with API",
+            error: {
+                error: "server_error",
+                details: null
+            }
         });
     }
 }

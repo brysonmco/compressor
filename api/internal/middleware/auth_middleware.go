@@ -3,9 +3,9 @@ package middleware
 import (
 	"context"
 	"errors"
-	"github.com/awesomebfm/compressor/internal/auth"
-	"github.com/awesomebfm/compressor/internal/db"
-	"github.com/awesomebfm/compressor/internal/utils"
+	"github.com/brysonmco/compressor/internal/auth"
+	"github.com/brysonmco/compressor/internal/db"
+	"github.com/brysonmco/compressor/internal/utils"
 	"net/http"
 	"strings"
 )

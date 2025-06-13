@@ -1,13 +1,10 @@
 package handlers
 
 import (
-	"errors"
-	"github.com/awesomebfm/compressor/internal/db"
-	"github.com/awesomebfm/compressor/internal/middleware"
-	"github.com/awesomebfm/compressor/internal/models"
-	"github.com/awesomebfm/compressor/internal/utils"
+	"github.com/brysonmco/compressor/internal/db"
+	"github.com/brysonmco/compressor/internal/middleware"
+	"github.com/brysonmco/compressor/internal/utils"
 	"github.com/go-chi/chi/v5"
-	"github.com/jackc/pgx/v5"
 	"net/http"
 	"time"
 )
@@ -45,18 +42,7 @@ func (h *UserHandler) handleGetProfile(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Get subscription
-	// TODO: This still needs work
-	subscription, err := h.Database.FindActiveSubscriptionByUserId(r.Context(), id)
-	if err != nil && !errors.Is(err, pgx.ErrNoRows) {
-		utils.WriteError(w, r, http.StatusInternalServerError, "internal error", "internal_error", nil)
-		return
-	} else if err != nil {
-		subscription = &models.Subscription{
-			PlanId:           0,
-			Status:           "active",
-			CurrentPeriodEnd: time.Now().AddDate(0, 1, 0), // Default to one month from now
-		}
-	}
+	// TODO: Implement
 
 	// Get tokens
 	// TODO: Implement
@@ -67,9 +53,9 @@ func (h *UserHandler) handleGetProfile(w http.ResponseWriter, r *http.Request) {
 		"firstName": user.FirstName,
 		"lastName":  user.LastName,
 		"subscription": map[string]interface{}{
-			"active":    true,
-			"plan":      subscription.PlanId,
-			"periodEnd": subscription.CurrentPeriodEnd,
+			"active":    false,
+			"plan":      0,
+			"periodEnd": time.Now().Add(time.Hour * 24),
 		},
 		"tokens": 1000, // TODO: Implement token fetching
 	})

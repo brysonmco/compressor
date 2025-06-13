@@ -1,44 +1,93 @@
-import type { Actions } from './$types';
-import {isAuthenticated, login} from "$lib/server/auth";
-import {json, redirect} from "@sveltejs/kit";
-import type {PageServerLoad} from "../../../.svelte-kit/types/src/routes/pricing/$types";
+import type {Actions, PageServerLoad} from './$types';
+import {fail, json, redirect} from "@sveltejs/kit";
+import {login} from "$lib/server/auth";
 
 export const load: PageServerLoad = async ({cookies}) => {
-    // Check if the user is authenticated
-    const authenticated = await isAuthenticated(cookies);
 
-    if (authenticated) {
-        // If authenticated, redirect to the home page
-        return redirect(303, '/dashboard');
-    }
 };
 
 export const actions = {
-    default: async ({ cookies, request }) => {
+    default: async ({cookies, request}) => {
         const data = await request.formData();
-        const email = data.get('email')!.toString();
+        const email = data.get('email')!.toString().trim();
         const password = data.get('password')!.toString();
 
-        let req = await login(email, password)
+        // Validate the email and password
+        const errors: Record<string, string> = {};
 
-        let res = await req.json();
-        if (!res.success) {
-            return {
-                "success": false,
-                "message": res.message,
-                "formErrors": res.fieldErrors,
+        if (!email) {
+            errors.email = "Email is required";
+        } else if (email.length > 250) {
+            errors.email = "Email is too long";
+        }
+
+        if (!password) {
+            errors.password = "Password is required";
+        } else if (password.length > 250) {
+            errors.password = "Password is too long";
+        }
+
+
+        if (Object.keys(errors).length > 0) {
+            return fail(400, {
+                errors,
+            });
+        }
+
+        // Send the login request to the server
+        const res = await login(email, password)
+        const resData = await res.json();
+        if (!resData.success) {
+            switch (resData.error) {
+                case "server_error":
+                    errors.server = "An error occurred while processing your request. Please try again later.";
+                    return fail(500, {
+                        errors,
+                    });
+                case "invalid_credentials":
+                    errors.email = "Incorrect email or password";
+                    errors.password = "Incorrect email or password";
+                    return fail(400, {
+                        errors,
+                    });
+                default:
+                    errors.server = "An unexpected error occurred. Please try again later.";
+                    return fail(500, {
+                        errors,
+                    });
             }
         }
 
-        cookies.set('accessToken', res.accessToken, {
-            httpOnly: true,
-            path: '/',
-        });
-        cookies.set('refreshToken', res.refreshToken, {
-            httpOnly: true,
-            path: '/',
-        });
+        const accessToken = resData.accessToken;
+        const refreshToken = resData.refreshToken;
 
-        redirect(303, '/dashboard');
+        if (!accessToken || !refreshToken) {
+            errors.server = "An error occurred while processing your request. Please try again later.";
+            return fail(500, {
+                errors,
+            });
+        }
+
+        cookies.set(
+            'accessToken',
+            accessToken,
+            {
+                path: '/',
+                httpOnly: true,
+                sameSite: 'strict',
+            }
+        );
+
+        cookies.set(
+            'refreshToken',
+            refreshToken,
+            {
+                path: '/',
+                httpOnly: true,
+                sameSite: 'strict',
+            }
+        );
+
+        return redirect(300, '/dashboard');
     }
 } satisfies Actions;

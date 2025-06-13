@@ -10,6 +10,7 @@ type User struct {
 	PasswordHash     string    `json:"passwordHash"`
 	StripeCustomerId string    `json:"stripeCustomerId"`
 	EmailVerified    bool      `json:"emailVerified"`
+	Role             string    `json:"role"`
 	CreatedAt        time.Time `json:"createdAt"`
 	UpdatedAt        time.Time `json:"updatedAt"`
 	LastLogin        time.Time `json:"lastLogin"`

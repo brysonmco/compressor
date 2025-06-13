@@ -2,7 +2,7 @@ package db
 
 import (
 	"context"
-	"github.com/awesomebfm/compressor/internal/models"
+	"github.com/brysonmco/compressor/internal/models"
 )
 
 func (d *Database) FindSessionByID(

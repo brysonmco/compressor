@@ -3,17 +3,16 @@ package handlers
 import (
 	"encoding/json"
 	"errors"
-	"github.com/awesomebfm/compressor/internal/auth"
-	"github.com/awesomebfm/compressor/internal/db"
-	"github.com/awesomebfm/compressor/internal/mail"
-	"github.com/awesomebfm/compressor/internal/models"
-	"github.com/awesomebfm/compressor/internal/subscriptions"
-	"github.com/awesomebfm/compressor/internal/utils"
+	"github.com/brysonmco/compressor/internal/auth"
+	"github.com/brysonmco/compressor/internal/db"
+	"github.com/brysonmco/compressor/internal/mail"
+	"github.com/brysonmco/compressor/internal/models"
+	"github.com/brysonmco/compressor/internal/subscriptions"
+	"github.com/brysonmco/compressor/internal/utils"
 	"github.com/go-chi/chi/v5"
 	"github.com/jackc/pgx/v5"
 	"log"
 	"net/http"
-	"os"
 	"strings"
 	"time"
 )
@@ -94,7 +93,7 @@ func (h *AuthHandler) handleLogin(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Generate access token
-	accessToken, err := h.Auth.GenerateAccessToken(user.Id)
+	accessToken, err := h.Auth.GenerateAccessToken(user.Id, "user")
 	if err != nil {
 		log.Printf("error generating access token: %v", err)
 		utils.WriteError(w, r, http.StatusInternalServerError, "error logging in", "internal_error", nil)
@@ -129,7 +128,9 @@ func (h *AuthHandler) handleLogin(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Set refresh token cookie
-	switch os.Getenv("DEPLOYMENT_TARGET") {
+	// For the time being we will pass refresh tokens back in the JSON as the SvelteKit backend will be the only receiver
+	// of this request
+	/*switch os.Getenv("DEPLOYMENT_TARGET") {
 	case "development":
 		http.SetCookie(w, &http.Cookie{
 			Name:     "refreshToken",
@@ -148,7 +149,7 @@ func (h *AuthHandler) handleLogin(w http.ResponseWriter, r *http.Request) {
 			Path:     "v1/auth/refresh",
 			SameSite: http.SameSiteStrictMode,
 		})
-	}
+	}*/
 
 	// Persist session
 	now := time.Now()
@@ -184,7 +185,8 @@ func (h *AuthHandler) handleLogin(w http.ResponseWriter, r *http.Request) {
 
 	// Return access token
 	utils.WriteSuccess(w, r, http.StatusOK, "success", map[string]string{
-		"accessToken": accessToken,
+		"accessToken":  accessToken,
+		"refreshToken": refreshToken,
 	})
 }
 
@@ -277,7 +279,7 @@ func (h *AuthHandler) handleSignUp(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Generate access token
-	accessToken, err := h.Auth.GenerateAccessToken(user.Id)
+	accessToken, err := h.Auth.GenerateAccessToken(user.Id, "user")
 	if err != nil {
 		log.Printf("error generating access token: %v", err)
 		utils.WriteError(w, r, http.StatusInternalServerError, "error creating account", "internal_error", nil)
@@ -407,8 +409,16 @@ func (h *AuthHandler) handleRefresh(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Grab user for their role
+	user, err := h.Database.FindUserByID(r.Context(), session.UserId)
+	if err != nil {
+		log.Printf("error finding user by ID: %v", err)
+		utils.WriteError(w, r, http.StatusInternalServerError, "error refreshing token", "internal_error", nil)
+		return
+	}
+
 	// Generate access token
-	accessToken, err := h.Auth.GenerateAccessToken(session.UserId)
+	accessToken, err := h.Auth.GenerateAccessToken(user.Id, user.Role)
 	if err != nil {
 		log.Printf("error generating access token: %v", err)
 		utils.WriteError(w, r, http.StatusInternalServerError, "error refreshing token", "internal_error", nil)
