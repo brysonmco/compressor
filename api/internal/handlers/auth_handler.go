@@ -178,6 +178,7 @@ func (h *AuthHandler) handleLogin(w http.ResponseWriter, r *http.Request) {
 	if !user.EmailVerified {
 		utils.WriteSuccess(w, r, http.StatusOK, "verify email", map[string]interface{}{
 			"accessToken":   accessToken,
+			"refreshToken":  refreshToken,
 			"emailVerified": false,
 		})
 		return

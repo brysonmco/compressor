@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"fmt"
 	"github.com/brysonmco/compressor/internal/db"
 	"github.com/brysonmco/compressor/internal/middleware"
 	"github.com/brysonmco/compressor/internal/utils"
@@ -25,6 +26,7 @@ func NewUserHandler(
 
 	r := chi.NewRouter()
 	r.With(authMiddleware.Protected).Get("/profile", h.handleGetProfile)
+	r.With(authMiddleware.ProtectedAdminOnly).Get("/:id", h.handleGetProfile)
 
 	return r
 }
@@ -59,4 +61,13 @@ func (h *UserHandler) handleGetProfile(w http.ResponseWriter, r *http.Request) {
 		},
 		"tokens": 1000, // TODO: Implement token fetching
 	})
+}
+
+// GET /users/{id}
+func (h *UserHandler) handleGetUser(w http.ResponseWriter, r *http.Request) {
+	// Grab the user ID from the URL
+	id := chi.URLParam(r, "id")
+	fmt.Println(id)
+
+	utils.WriteError(w, r, http.StatusNotImplemented, "not implemented", "not_implemented", nil)
 }
