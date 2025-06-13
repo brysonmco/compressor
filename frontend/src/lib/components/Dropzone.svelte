@@ -1,4 +1,5 @@
 <script lang="ts">
+    import { enhance } from '$app/forms';
     let fileInput: HTMLInputElement;
     let form: HTMLFormElement;
     let dragActive = false;
@@ -42,7 +43,7 @@
     }
 </script>
 
-<form method="POST" enctype="multipart/form-data" class="hidden" action="?/upload" bind:this={form}>
+<form method="POST" enctype="multipart/form-data" class="hidden" action="?/upload" bind:this={form} use:enhance>
     <input type="file" class="hidden" name="file" accept="video/*" bind:this={fileInput} on:change={() => handleFileInput(fileInput.files)}>
 </form>
 
