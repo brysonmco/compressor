@@ -31,3 +31,7 @@ func NewDatabase(configString string) (*Database, error) {
 
 	return &Database{Pool: pool}, nil
 }
+
+func (d *Database) Close() {
+	d.Pool.Close()
+}

@@ -26,6 +26,7 @@ func main() {
 	if err != nil {
 		log.Fatalf("failed to connect to database: %v", err)
 	}
+	defer database.Close()
 
 	// Auth
 	ath, err := auth.NewAuth(os.Getenv("PASETO_PRIVATE_KEY"))
